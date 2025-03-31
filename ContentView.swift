@@ -177,22 +177,7 @@ struct ContentView: View {
                         TrendingView(viewModel: viewModel)
                     }
 
-                    Button(action: {
-                        if let feed = selectedFeed {
-                            viewModel.toggleBookmark(for: feed)
-                        }
-                    }) {
-                        VStack {
-                            Image(systemName: "bookmark")
-                                .resizable()
-                                .frame(width: 24, height: 24)
-                                .foregroundColor(.orange)
-                            Text("Bookmark")
-                                .font(.caption)
-                                .foregroundColor(.orange)
-                        }
-                    }
-                    
+                   
                     // Customize View Button
                     Button(action: {
                         showCustomize = true
