@@ -1,56 +1,112 @@
 import SwiftUI
 
-import SwiftUI
-
-struct BookmarksView: View {
+// MARK: - Saved View
+struct SavedView: View {
     @ObservedObject var viewModel: RSSFeedViewModel
-    @Environment(\.dismiss) private var dismiss
-    let onFeedTapped: (NewsFeed) -> Void
+    @State private var selectedFeed: NewsFeed?
+    @State private var selectedFilter: SavedFilter = .all
     
     var bookmarkedFeeds: [NewsFeed] {
-        viewModel.newsFeeds.filter { viewModel.isBookmarked($0) }
+        let feeds = viewModel.newsFeeds.filter { viewModel.isBookmarked($0) }
+        
+        switch selectedFilter {
+        case .all:
+            return feeds
+        case .today:
+            return feeds.filter { feed in
+                guard let date = feed.postDate else { return false }
+                return Calendar.current.isDateInToday(date)
+            }
+        case .thisWeek:
+            let weekAgo = Calendar.current.date(byAdding: .day, value: -7, to: Date())!
+            return feeds.filter { feed in
+                guard let date = feed.postDate else { return false }
+                return date >= weekAgo
+            }
+        case .withImages:
+            return feeds.filter { $0.thumbnail != nil }
+        }
     }
     
     var body: some View {
         NavigationView {
-            Group {
-                if bookmarkedFeeds.isEmpty {
-                    EmptyBookmarksView()
-                } else {
-                    ScrollView {
-                        LazyVStack(spacing: 12) {
-                            ForEach(bookmarkedFeeds) { feed in
-                                BookmarkCard(feed: feed) {
-                                    dismiss()
-                                    onFeedTapped(feed)
-                                } onRemove: {
-                                    withAnimation {
-                                        viewModel.toggleBookmark(for: feed)
+            VStack(spacing: 0) {
+                // Filter Chips
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 12) {
+                        ForEach(SavedFilter.allCases, id: \.self) { filter in
+                            FilterChip(
+                                title: filter.rawValue,
+                                isSelected: selectedFilter == filter
+                            ) {
+                                selectedFilter = filter
+                            }
+                        }
+                    }
+                    .padding()
+                }
+                
+                // Content
+                Group {
+                    if bookmarkedFeeds.isEmpty {
+                        EmptyBookmarksView()
+                    } else {
+                        ScrollView {
+                            LazyVStack(spacing: 12) {
+                                ForEach(bookmarkedFeeds) { feed in
+                                    SavedArticleCard(feed: feed, viewModel: viewModel) {
+                                        selectedFeed = feed
                                     }
                                 }
                             }
+                            .padding()
                         }
-                        .padding()
                     }
                 }
             }
-            .navigationTitle("Bookmarks")
+            .navigationTitle("Saved")
             .navigationBarTitleDisplayMode(.large)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Done") {
-                        dismiss()
-                    }
-                }
+            .sheet(item: $selectedFeed) { feed in
+                FeedDetailView(feed: feed, viewModel: viewModel)
             }
         }
     }
 }
-// MARK: - Bookmark Card
-struct BookmarkCard: View {
+
+// MARK: - Saved Filter
+enum SavedFilter: String, CaseIterable {
+    case all = "All"
+    case today = "Today"
+    case thisWeek = "This Week"
+    case withImages = "With Images"
+}
+
+// MARK: - Filter Chip
+struct FilterChip: View {
+    let title: String
+    let isSelected: Bool
+    let action: () -> Void
+    
+    var body: some View {
+        Button(action: action) {
+            Text(title)
+                .font(.subheadline)
+                .fontWeight(isSelected ? .semibold : .regular)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 8)
+                .background(isSelected ? Color.orange : Color(.systemGray6))
+                .foregroundStyle(isSelected ? .white : .primary)
+                .cornerRadius(20)
+        }
+        .buttonStyle(.plain)
+    }
+}
+
+// MARK: - Saved Article Card
+struct SavedArticleCard: View {
     let feed: NewsFeed
+    @ObservedObject var viewModel: RSSFeedViewModel
     let onTap: () -> Void
-    let onRemove: () -> Void
     
     var body: some View {
         Button(action: onTap) {
@@ -105,8 +161,12 @@ struct BookmarkCard: View {
                 
                 Spacer(minLength: 0)
                 
-                // Remove button
-                Button(action: onRemove) {
+                // Remove bookmark button
+                Button {
+                    withAnimation {
+                        viewModel.toggleBookmark(for: feed)
+                    }
+                } label: {
                     Image(systemName: "bookmark.fill")
                         .foregroundStyle(.orange)
                         .font(.title3)
@@ -132,29 +192,7 @@ struct BookmarkCard: View {
     }
 }
 
-// MARK: - Empty Bookmarks View
-struct EmptyBookmarksView: View {
-    var body: some View {
-        VStack(spacing: 16) {
-            Image(systemName: "bookmark")
-                .font(.system(size: 60))
-                .foregroundStyle(.orange)
-            
-            Text("No Bookmarks Yet")
-                .font(.title2)
-                .fontWeight(.semibold)
-            
-            Text("Save articles you want to read later by tapping the bookmark icon")
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-                .multilineTextAlignment(.center)
-                .padding(.horizontal, 40)
-        }
-    }
-}
-
 // MARK: - Preview
 #Preview {
-    BookmarksView(viewModel: RSSFeedViewModel()) { _ in }
+    SavedView(viewModel: RSSFeedViewModel())
 }
-

@@ -4,4 +4,10 @@
    <FileRef
       location = "self:">
    </FileRef>
+   <FileRef
+      location = "group:Models.swift">
+   </FileRef>
+   <FileRef
+      location = "group:REVAMP_SUMMARY.md">
+   </FileRef>
 </Workspace>
