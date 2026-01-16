@@ -25,6 +25,11 @@ struct ArticleContext: Codable, Hashable {
         case .timeSensitive: return "pink"
         }
     }
+    
+    /// Returns true if this is high-confidence, specific context (not fallback)
+    var isHighSignal: Bool {
+        confidence >= 0.70
+    }
 }
 
 // MARK: - What This Means (Implications)
@@ -44,6 +49,8 @@ class ArticleIntelligenceEngine {
     // MARK: - Context Generation
     
     /// Generate contextual explanation for why an article matters
+    /// Uses tiered approach: High-Specific → Category-Aware → Personal (never nil)
+    /// Now with editorial restraint: filters promo content and provides varied copy
     func generateContext(
         for article: NewsFeed,
         category: FeedCategory,
@@ -53,39 +60,60 @@ class ArticleIntelligenceEngine {
         userBookmarks: Set<UUID>
     ) -> ArticleContext? {
         
-        var contexts: [(context: ArticleContext, score: Double)] = []
-        
-        // 1. Category-specific context
-        if let categoryContext = generateCategoryContext(article, category, subcategory, sportsSubcategory) {
-            contexts.append((categoryContext, categoryContext.confidence))
+        // 🛑 Suppress promo/deal content (always skip these)
+        if isPromoContent(article) {
+            return nil
         }
         
-        // 2. Personal interest context
+        var contexts: [(context: ArticleContext, score: Double)] = []
+        
+        // Tier 3: Personal relevance (highest priority if present)
         if let personalContext = generatePersonalContext(article, userReadHistory, userBookmarks) {
             contexts.append((personalContext, personalContext.confidence))
         }
         
-        // 3. Market impact context (for finance/investing)
+        // Tier 1: High-specific context (keyword-based signals)
+        if let specificContext = generateCategoryContext(article, category, subcategory, sportsSubcategory) {
+            contexts.append((specificContext, specificContext.confidence))
+        }
+        
+        // Market impact context (for finance/investing)
         if category == .finance || category == .investing {
             if let marketContext = generateMarketImpactContext(article, subcategory) {
                 contexts.append((marketContext, marketContext.confidence))
             }
         }
         
-        // 4. Time-sensitive context
+        // Time-sensitive context
         if let timeContext = generateTimeSensitiveContext(article) {
             contexts.append((timeContext, timeContext.confidence))
         }
         
-        // Pick best context with confidence > 0.6
-        let bestContext = contexts
-            .filter { $0.score > 0.6 }
-            .max(by: { $0.score < $1.score })
+        // Pick best context by confidence
+        if let bestContext = contexts.max(by: { $0.score < $1.score }) {
+            return bestContext.context
+        }
         
-        return bestContext?.context
+        // Tier 2: Category-Aware Fallback (varied copy, deterministic selection)
+        return generateCategoryFallback(article, category, subcategory, sportsSubcategory)
     }
     
-    // MARK: - Category Context
+    // MARK: - Promo Detection
+    
+    /// Detect promotional/deal content that should never show context
+    private func isPromoContent(_ article: NewsFeed) -> Bool {
+        let text = (article.title + " " + article.displayContent).lowercased()
+        
+        let promoKeywords = [
+            "coupon", "promo", "deal", "% off", "percent off",
+            "save", "discount", "offer", "sale", "clearance",
+            "limited time", "special offer", "black friday", "cyber monday"
+        ]
+        
+        return promoKeywords.contains { text.contains($0) }
+    }
+    
+    // MARK: - Category Context (Tier 1: High-Specific)
     
     private func generateCategoryContext(
         _ article: NewsFeed,
@@ -99,24 +127,43 @@ class ArticleIntelligenceEngine {
         
         switch category {
         case .technology:
-            if containsAny(in: title + content, keywords: ["ai", "artificial intelligence", "machine learning", "chatgpt", "openai"]) {
+            // AI & ML
+            if containsAny(in: title + content, keywords: ["ai", "artificial intelligence", "machine learning", "chatgpt", "openai", "claude", "gemini", "llm"]) {
                 return ArticleContext(
                     reason: "Impacts AI development and tech industry trends",
                     confidence: 0.85,
                     type: .categoryRelevance
                 )
             }
-            if containsAny(in: title + content, keywords: ["iphone", "apple", "ios", "macos", "vision pro"]) {
+            // Major tech companies
+            if containsAny(in: title + content, keywords: ["apple", "google", "microsoft", "meta", "amazon", "tesla", "nvidia", "openai"]) {
                 return ArticleContext(
-                    reason: "Affects Apple ecosystem and consumer tech",
-                    confidence: 0.8,
+                    reason: "Affects major tech platforms and consumer expectations",
+                    confidence: 0.82,
                     type: .categoryRelevance
                 )
             }
-            if containsAny(in: title + content, keywords: ["regulation", "privacy", "antitrust", "policy"]) {
+            // Devices & products
+            if containsAny(in: title + content, keywords: ["iphone", "ios", "macos", "vision pro", "android", "windows", "pixel"]) {
+                return ArticleContext(
+                    reason: "Signals product evolution in consumer tech",
+                    confidence: 0.80,
+                    type: .categoryRelevance
+                )
+            }
+            // Regulation & policy
+            if containsAny(in: title + content, keywords: ["regulation", "privacy", "antitrust", "policy", "lawsuit", "ftc", "doj"]) {
                 return ArticleContext(
                     reason: "Shapes tech industry regulations and policy",
-                    confidence: 0.75,
+                    confidence: 0.78,
+                    type: .categoryRelevance
+                )
+            }
+            // Cybersecurity
+            if containsAny(in: title + content, keywords: ["security", "breach", "hack", "vulnerability", "ransomware", "cyber"]) {
+                return ArticleContext(
+                    reason: "Highlights security risks and digital safety concerns",
+                    confidence: 0.76,
                     type: .categoryRelevance
                 )
             }
@@ -136,36 +183,100 @@ class ArticleIntelligenceEngine {
             }
             
         case .finance:
-            if containsAny(in: title + content, keywords: ["fed", "federal reserve", "interest rate", "inflation"]) {
+            // Fed & monetary policy
+            if containsAny(in: title + content, keywords: ["fed", "federal reserve", "interest rate", "inflation", "powell", "rate cut", "rate hike"]) {
                 return ArticleContext(
                     reason: "Affects interest rates, mortgages, and market sentiment",
-                    confidence: 0.9,
+                    confidence: 0.90,
                     type: .marketImpact
                 )
             }
-            if containsAny(in: title + content, keywords: ["recession", "gdp", "unemployment", "jobs"]) {
+            // Economic indicators
+            if containsAny(in: title + content, keywords: ["recession", "gdp", "unemployment", "jobs", "cpi", "pce", "economic growth"]) {
                 return ArticleContext(
                     reason: "Indicates economic health and market conditions",
                     confidence: 0.85,
                     type: .marketImpact
                 )
             }
+            // Corporate & earnings
+            if containsAny(in: title + content, keywords: ["earnings", "revenue", "profit", "guidance", "outlook", "quarterly"]) {
+                return ArticleContext(
+                    reason: "Reflects corporate performance and sector trends",
+                    confidence: 0.80,
+                    type: .marketImpact
+                )
+            }
+            // Banking & credit
+            if containsAny(in: title + content, keywords: ["bank", "credit", "lending", "mortgage", "treasury", "yield"]) {
+                return ArticleContext(
+                    reason: "Influences borrowing costs and financial conditions",
+                    confidence: 0.78,
+                    type: .marketImpact
+                )
+            }
             
         case .health:
-            if containsAny(in: title + content, keywords: ["fda", "approval", "drug", "vaccine"]) {
+            // FDA & approvals
+            if containsAny(in: title + content, keywords: ["fda", "approval", "drug", "vaccine", "trial", "clinical"]) {
                 return ArticleContext(
                     reason: "May impact healthcare stocks and public health policy",
-                    confidence: 0.75,
+                    confidence: 0.80,
                     type: .crossCategory
+                )
+            }
+            // Medical breakthroughs
+            if containsAny(in: title + content, keywords: ["breakthrough", "cure", "treatment", "research", "study", "discovery"]) {
+                return ArticleContext(
+                    reason: "Signals advances in medical science and care",
+                    confidence: 0.75,
+                    type: .categoryRelevance
                 )
             }
             
         case .news:
-            if containsAny(in: title + content, keywords: ["election", "vote", "congress", "senate"]) {
+            // Politics & elections
+            if containsAny(in: title + content, keywords: ["election", "vote", "congress", "senate", "president", "campaign", "poll"]) {
                 return ArticleContext(
                     reason: "Could affect policy, markets, and regulations",
-                    confidence: 0.8,
+                    confidence: 0.85,
                     type: .crossCategory
+                )
+            }
+            // Legal & courts
+            if containsAny(in: title + content, keywords: ["court", "ruling", "lawsuit", "verdict", "judge", "supreme court"]) {
+                return ArticleContext(
+                    reason: "Sets legal precedent with broad implications",
+                    confidence: 0.78,
+                    type: .crossCategory
+                )
+            }
+            // International
+            if containsAny(in: title + content, keywords: ["china", "russia", "europe", "war", "conflict", "trade deal", "treaty"]) {
+                return ArticleContext(
+                    reason: "International developments may affect U.S. markets and policy",
+                    confidence: 0.76,
+                    type: .crossCategory
+                )
+            }
+            
+        case .entertainment:
+            // Major releases
+            if containsAny(in: title + content, keywords: ["box office", "streaming", "premiere", "release", "debut", "netflix", "disney"]) {
+                return ArticleContext(
+                    reason: "Reflects audience trends and media industry shifts",
+                    confidence: 0.72,
+                    type: .categoryRelevance
+                )
+            }
+            
+        case .gaming:
+            // Major titles & platforms
+            if containsAny(in: title + content, keywords: ["playstation", "xbox", "nintendo", "steam", "release", "esports", "sales"]) {
+                return ArticleContext(
+                    reason: "Signals gaming industry trends and platform competition",
+                    confidence: 0.70,
+                    type: .categoryRelevance
                 )
             }
             
@@ -173,7 +284,7 @@ class ArticleIntelligenceEngine {
             break
         }
         
-        return nil
+        return nil // Falls through to Tier 2 fallback
     }
     
     // MARK: - Investing Subcategory Context
@@ -269,7 +380,7 @@ class ArticleIntelligenceEngine {
         _ userBookmarks: Set<UUID>
     ) -> ArticleContext? {
         
-        // If user has read/bookmarked similar source recently
+        // Only show if this specific article is bookmarked
         if userBookmarks.contains(article.id) {
             return ArticleContext(
                 reason: "You bookmarked this for later reading",
@@ -278,17 +389,162 @@ class ArticleIntelligenceEngine {
             )
         }
         
-        // Simple heuristic: if from same source as bookmarked articles
-        // (More sophisticated in Personal Memory Layer feature)
-        if !userBookmarks.isEmpty {
-            return ArticleContext(
-                reason: "From sources you frequently bookmark",
-                confidence: 0.65,
-                type: .personalInterest
-            )
-        }
+        // No other personal interest heuristics for now
+        // Future: Could analyze bookmark patterns by source, category, keywords, etc.
         
         return nil
+    }
+    
+    // MARK: - Category Fallback (Tier 2: Category-Aware)
+    
+    /// Returns varied, meaningful context based on category
+    /// Uses deterministic selection to avoid repetition in same scroll
+    /// Returns nil for low-value fallbacks (silence is preferable)
+    private func generateCategoryFallback(
+        _ article: NewsFeed,
+        _ category: FeedCategory,
+        _ subcategory: InvestingSubcategory?,
+        _ sportsSubcategory: SportsSubcategory?
+    ) -> ArticleContext? {
+        
+        // Use article ID hash for deterministic variation
+        let variation = abs(article.id.hashValue) % 4
+        
+        switch category {
+        case .technology:
+            let variants = [
+                "Signals competitive shifts in the tech industry",
+                "Highlights how companies are positioning against rivals",
+                "Reflects broader trends shaping the tech landscape",
+                "Shows where platform competition is intensifying"
+            ]
+            return ArticleContext(
+                reason: variants[variation],
+                confidence: 0.45,
+                type: .categoryRelevance
+            )
+            
+        case .investing:
+            if let sub = subcategory {
+                let variants = [
+                    "Relevant to \(sub.rawValue.lowercased()) strategy and analysis",
+                    "Offers perspective on \(sub.rawValue.lowercased()) opportunities",
+                    "Highlights trends in \(sub.rawValue.lowercased()) investing",
+                    "Signals market dynamics for \(sub.rawValue.lowercased())"
+                ]
+                return ArticleContext(
+                    reason: variants[variation],
+                    confidence: 0.48,
+                    type: .categoryRelevance
+                )
+            }
+            let variants = [
+                "May influence investment decisions and market outlook",
+                "Reflects evolving market themes and opportunities",
+                "Highlights shifts in investor sentiment",
+                "Signals changing risk-reward dynamics"
+            ]
+            return ArticleContext(
+                reason: variants[variation],
+                confidence: 0.45,
+                type: .categoryRelevance
+            )
+            
+        case .finance:
+            let variants = [
+                "May influence market sentiment and investor expectations",
+                "Reflects broader economic or earnings trends",
+                "Signals shifts in financial conditions",
+                "Highlights evolving market fundamentals"
+            ]
+            return ArticleContext(
+                reason: variants[variation],
+                confidence: 0.47,
+                type: .categoryRelevance
+            )
+            
+        case .sports:
+            if let sportsSub = sportsSubcategory {
+                let variants = [
+                    "Affects team strategy and \(sportsSub.rawValue.lowercased()) dynamics",
+                    "Signals momentum shifts in \(sportsSub.rawValue.lowercased())",
+                    "Highlights key developments in \(sportsSub.rawValue.lowercased())",
+                    "Reflects competitive changes in \(sportsSub.rawValue.lowercased())"
+                ]
+                return ArticleContext(
+                    reason: variants[variation],
+                    confidence: 0.46,
+                    type: .categoryRelevance
+                )
+            }
+            let variants = [
+                "Signals momentum shifts in the season",
+                "Affects competitive dynamics and standings",
+                "Highlights strategic changes shaping outcomes"
+            ]
+            return ArticleContext(
+                reason: variants[variation % 3],
+                confidence: 0.44,
+                type: .categoryRelevance
+            )
+            
+        case .entertainment:
+            let variants = [
+                "Reflects changing audience tastes and media strategy",
+                "Signals shifts in content consumption trends",
+                "Highlights evolving entertainment industry dynamics"
+            ]
+            return ArticleContext(
+                reason: variants[variation % 3],
+                confidence: 0.43,
+                type: .categoryRelevance
+            )
+            
+        case .health:
+            let variants = [
+                "Highlights developments in healthcare and wellness",
+                "Signals advances in medical research and care",
+                "Reflects evolving public health priorities"
+            ]
+            return ArticleContext(
+                reason: variants[variation % 3],
+                confidence: 0.44,
+                type: .categoryRelevance
+            )
+            
+        case .news:
+            let variants = [
+                "Part of ongoing political or global developments",
+                "Could shape public debate or policy direction",
+                "Reflects evolving geopolitical dynamics",
+                "Signals potential regulatory or legislative changes"
+            ]
+            return ArticleContext(
+                reason: variants[variation],
+                confidence: 0.46,
+                type: .categoryRelevance
+            )
+            
+        case .food:
+            // Silence - most food content is low-value or promotional
+            return nil
+            
+        case .travel:
+            // Silence - most travel content is promotional
+            return nil
+            
+        case .gaming:
+            let variants = [
+                "Shows where gaming innovation and player interests are heading",
+                "Signals competitive shifts in the gaming industry",
+                "Reflects evolving player engagement trends"
+            ]
+            return ArticleContext(
+                reason: variants[variation % 3],
+                confidence: 0.43,
+                type: .categoryRelevance
+            )
+        }
     }
     
     // MARK: - Market Impact Context

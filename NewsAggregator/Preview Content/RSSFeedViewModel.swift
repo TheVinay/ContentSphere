@@ -84,20 +84,21 @@ class RSSFeedViewModel: ObservableObject {
             FeedSource(name: "Reuters", url: "https://feeds.reuters.com/reuters/topNews", category: .news),
             FeedSource(name: "The Guardian", url: "https://www.theguardian.com/world/rss", category: .news),
             
-            FeedSource(name: "TechCrunch", url: "https://feeds.feedburner.com/TechCrunch/", category: .technology),
-            FeedSource(name: "Ars Technica", url: "https://feeds.arstechnica.com/arstechnica/index", category: .technology),
             FeedSource(name: "The Verge", url: "https://www.theverge.com/rss/index.xml", category: .technology),
             FeedSource(name: "Wired", url: "https://www.wired.com/feed/rss", category: .technology),
+            FeedSource(name: "TechCrunch", url: "https://techcrunch.com/feed/", category: .technology),
+            FeedSource(name: "Ars Technica", url: "https://feeds.arstechnica.com/arstechnica/index", category: .technology),
+            FeedSource(name: "MIT Technology Review", url: "https://www.technologyreview.com/feed/", category: .technology),
             
             FeedSource(name: "ESPN", url: "https://www.espn.com/espn/rss/news", category: .sports, sportsSubcategory: .football),
-            FeedSource(name: "Sports Illustrated", url: "https://www.si.com/rss/si_topstories.rss", category: .sports),
-            FeedSource(name: "NBA.com", url: "https://www.nba.com/rss/nba_rss.xml", category: .sports, sportsSubcategory: .basketball),
-            FeedSource(name: "MLB.com", url: "https://www.mlb.com/feeds/news/rss.xml", category: .sports, sportsSubcategory: .baseball),
-            FeedSource(name: "NFL.com", url: "https://www.nfl.com/feeds/rss/news", category: .sports, sportsSubcategory: .football),
-            FeedSource(name: "NHL.com", url: "https://www.nhl.com/feeds/news/rss.xml", category: .sports, sportsSubcategory: .hockey),
+            FeedSource(name: "BBC Sport", url: "https://feeds.bbci.co.uk/sport/rss.xml", category: .sports),
+            FeedSource(name: "CBS Sports", url: "https://www.cbssports.com/rss/headlines/", category: .sports),
+            FeedSource(name: "Yahoo Sports", url: "https://sports.yahoo.com/rss/", category: .sports),
             
             FeedSource(name: "Variety", url: "https://variety.com/feed/", category: .entertainment),
-            FeedSource(name: "Hollywood Reporter", url: "https://www.hollywoodreporter.com/feed/", category: .entertainment),
+            FeedSource(name: "The Hollywood Reporter", url: "https://www.hollywoodreporter.com/feed/", category: .entertainment),
+            FeedSource(name: "Deadline", url: "https://deadline.com/feed/", category: .entertainment),
+            FeedSource(name: "Entertainment Weekly", url: "https://ew.com/feed/", category: .entertainment),
             
             FeedSource(name: "Medical News Today", url: "https://www.medicalnewstoday.com/rss", category: .health),
             FeedSource(name: "STAT News", url: "https://www.statnews.com/feed/", category: .health),
@@ -143,8 +144,11 @@ class RSSFeedViewModel: ObservableObject {
             FeedSource(name: "Federal Reserve News", url: "https://www.federalreserve.gov/feeds/press_all.xml", category: .investing, subcategory: .macroAndRates),
             FeedSource(name: "Bloomberg Economics", url: "https://feeds.bloomberg.com/economics/news.rss", category: .investing, subcategory: .macroAndRates),
             
-            FeedSource(name: "Serious Eats", url: "https://www.seriouseats.com/feed", category: .food),
-            FeedSource(name: "Food Network", url: "https://www.foodnetwork.com/feeds/feed.rss", category: .food),
+            FeedSource(name: "Bon Appétit", url: "https://www.bonappetit.com/feed/rss", category: .food),
+            FeedSource(name: "Serious Eats", url: "https://www.seriouseats.com/rss", category: .food),
+            FeedSource(name: "Food & Wine", url: "https://www.foodandwine.com/rss", category: .food),
+            FeedSource(name: "Eater", url: "https://www.eater.com/rss/index.xml", category: .food),
+            FeedSource(name: "NYT Cooking", url: "https://rss.nytimes.com/services/xml/rss/nyt/DiningandWine.xml", category: .food),
             
             FeedSource(name: "Lonely Planet", url: "https://www.lonelyplanet.com/feeds/latest", category: .travel),
             FeedSource(name: "Nomadic Matt", url: "https://www.nomadicmatt.com/feed/", category: .travel),
@@ -338,10 +342,9 @@ class RSSFeedViewModel: ObservableObject {
     }
     
     private func loadFeedSources() {
-        if let data = defaults.data(forKey: Keys.feedSources),
-           let decoded = try? JSONDecoder().decode([FeedSource].self, from: data) {
-            feedSources = decoded
-        }
+        // Force reset to new defaults (one-time migration for updated feeds)
+        feedSources = Self.defaultFeedSources()
+        saveFeedSources()
     }
     
     // MARK: - Sports Preferences
@@ -472,7 +475,6 @@ class RSSFeedViewModel: ObservableObject {
             // Determine sports subcategory if applicable
             var sportsSubcategory: SportsSubcategory? = nil
             if contextCategory == .sports {
-                // Find which sports subcategory this article belongs to
                 if let source = feedSources.first(where: { $0.name == article.sourceName }) {
                     sportsSubcategory = source.sportsSubcategory
                 }

@@ -119,26 +119,48 @@ A modern, feature-rich RSS news aggregator for iOS with **tab-based navigation**
 - Requires minimum 2 related articles to display
 - Uses in-memory articles only (no network calls)
 
+### **🖼️ Article Detail Layout Improvements**
+- **Hero image** constrained to screen width to prevent horizontal clipping
+- **Content container** constrained to screen width for proper text wrapping
+- **Smooth animations** for expandable sections with easeInOut timing
+- **Consistent spacing** throughout detail view
+
 ---
 
 ## 🆕 Major Features (v2.1 - Intelligence Layer)
 
 ### **🧠 "Why This Matters" - Article Context Intelligence**
-- **Contextual explanations** appear below every article headline
+- **Contextual explanations** appear below article headlines (editorial restraint: max 2 per section)
+- **Tiered context generation** with progressive specificity:
+  - **Tier 1 (High-Specific):** Keyword-matched insights for AI, Fed decisions, elections, major companies (70-90% confidence)
+  - **Tier 2 (Category-Aware):** Varied fallbacks for each category with 3-4 phrasings (42-48% confidence)
+  - **Tier 3 (Personal):** User-specific relevance based on bookmarks (100% confidence)
+- **Editorial restraint features:**
+  - **Section-based limiting:** Max 2 contexts per time section (Top Stories, Earlier Today, This Week)
+  - **High-signal priority:** Tier 1 contexts always show, fallbacks only if under section limit
+  - **Promo suppression:** Automatically filters coupon/deal/discount content
+  - **Varied copy:** Deterministic rotation prevents repetitive phrasing in same scroll
+  - **Silence preference:** Returns nil for low-value categories (Food, Travel) - quietness over filler
 - **Color-coded insights** by context type:
   - 🔵 Blue - Category relevance
-  - 🟣 Purple - Personal interest based on reading history
+  - 🟣 Purple - Personal interest based on bookmarks
   - 🟠 Orange - Market/financial impact
   - 🔵 Teal - Cross-category significance
   - 🔴 Red - Trending across multiple sources
   - 🩷 Pink - Time-sensitive/breaking news
-- **Smart confidence scoring** - only shows when confidence > 60%
+- **Expanded keyword coverage:**
+  - Technology: AI, major platforms (Apple, Google, Microsoft, Meta, Amazon, Tesla, Nvidia), security, regulation
+  - Finance: Fed policy, economic indicators, earnings, banking
+  - News: Politics, legal rulings, international developments
+  - Health: FDA approvals, medical breakthroughs
+  - Entertainment, Gaming: Industry trends and releases
 - **Rule-based intelligence** - no AI required, fast and privacy-friendly
 - **Examples:**
-  - "Impacts AI development and tech industry trends"
-  - "Affects interest rates, mortgages, and market sentiment"
-  - "Long-term growth theme with multi-year investment potential"
-  - "Breaking market news may trigger immediate price action"
+  - Tier 1: "Impacts AI development and tech industry trends"
+  - Tier 1: "Affects interest rates, mortgages, and market sentiment"
+  - Tier 2: "Signals competitive shifts in the tech industry" (variant 1 of 4)
+  - Tier 2: "Highlights how companies are positioning against rivals" (variant 2 of 4)
+  - Tier 3: "You bookmarked this for later reading"
 
 ---
 
@@ -181,6 +203,13 @@ A modern, feature-rich RSS news aggregator for iOS with **tab-based navigation**
 - Added `markAsRead()` tracking
 - Added category preference persistence
 - Added `enabledCategories()` helper
+- **Intelligence enrichment with editorial restraint:**
+  - `enrichArticlesWithContext()` now groups articles by time sections
+  - Implements max 2 contexts per section (Top Stories, Earlier Today, This Week)
+  - High-signal contexts (≥70% confidence) always show
+  - Low-signal fallback contexts only show if under section limit
+  - `groupArticlesByTimeSection()` mirrors UI sectioning logic
+  - Deterministic and stable (no flicker on refresh)
 
 #### **SettingsView.swift**
 - Added "Insights" button
@@ -189,6 +218,13 @@ A modern, feature-rich RSS news aggregator for iOS with **tab-based navigation**
 
 #### **FeedDetailView.swift**
 - Added `.onAppear { viewModel.markAsRead(feed) }`
+- **Layout improvements:**
+  - Hero image constrained to `UIScreen.main.bounds.width` to prevent clipping
+  - Content VStack constrained to screen width with `.frame(maxWidth: UIScreen.main.bounds.width)`
+  - Ensures proper text wrapping and prevents horizontal overflow
+- **Animation improvements:**
+  - Smooth expandable sections with `.easeInOut(duration: 0.25)`
+  - Rotated chevron indicators for visual feedback
 
 #### **MainTabView.swift**
 - Added tab switching tracking
@@ -296,19 +332,29 @@ A modern, feature-rich RSS news aggregator for iOS with **tab-based navigation**
 ### **NEW FILES (v2.1 - Intelligence Layer):**
 
 #### **ArticleIntelligence.swift** - Context Intelligence Engine
-- `ArticleContext` model with reason, confidence, and type
-- `ArticleIntelligenceEngine` - generates contextual explanations
+- `ArticleContext` model with reason, confidence, type, and `isHighSignal` computed property
+- `ArticleIntelligenceEngine` - generates contextual explanations with editorial restraint
+- **Tiered context generation architecture:**
+  - **Tier 1:** High-specific keyword matching (entities, not buzzwords) - 70-90% confidence
+  - **Tier 2:** Category-aware fallbacks with 3-4 varied phrasings - 42-48% confidence
+  - **Tier 3:** Personal relevance (bookmark-based) - 100% confidence
+- **Editorial features:**
+  - **Promo detection:** Filters coupon/deal/discount content (returns nil)
+  - **Copy variation:** Deterministic selection using article ID hash
+  - **Strategic silence:** Food and Travel categories return nil (low-value content)
+  - Confidence used for UI styling and section limiting, not hard gating
 - Category-specific context generation:
-  - Technology: AI, Apple, regulation patterns
-  - Investing: Subcategory-aware (ETFs, stocks, macro, etc.)
-  - Finance: Fed, interest rates, recession indicators
-  - Sports: Subcategory-based insights
-  - Health: FDA approvals, policy impacts
-  - News: Political/policy cross-category effects
-- Personal interest detection from reading history
+  - Technology: 5+ patterns (AI, platforms, devices, regulation, security)
+  - Investing: Subcategory-aware with 4 fallback variants
+  - Finance: 4+ patterns (Fed, economic indicators, earnings, banking)
+  - News: 4 variants (politics, legal, international, regulatory)
+  - Sports: Subcategory-based with 4 fallback variants
+  - Health: 3 variants (FDA approvals, breakthroughs, priorities)
+  - Entertainment, Gaming: 3 variants each
+  - Food, Travel: Returns nil (promotional content)
+- Personal interest detection from bookmarks only
 - Market impact analysis for financial content
 - Time-sensitive breaking news detection
-- Confidence-based filtering (>60% threshold)
 - 6 context types with color coding
 
 ### **NEW FILES (v2.0):**

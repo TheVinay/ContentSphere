@@ -151,26 +151,37 @@ struct HomeView: View {
                         )
                     }
                 }
-                
-                // Bottom Action Bar
-                ActionBarView(
-                    isGridView: $isGridView,
-                    onRefreshTapped: {
-                        Task {
-                            await viewModel.refreshFeeds()
-                        }
-                    }
-                )
             }
             .navigationTitle("News")
             .navigationBarTitleDisplayMode(.large)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    Button {
-                        showSettings = true
-                    } label: {
-                        Image(systemName: "gearshape.fill")
-                            .foregroundStyle(.blue)
+                    HStack(spacing: 16) {
+                        // Refresh button
+                        Button {
+                            Task {
+                                await viewModel.refreshFeeds()
+                            }
+                        } label: {
+                            Image(systemName: "arrow.clockwise")
+                                .foregroundStyle(.blue)
+                        }
+                        
+                        // View mode toggle
+                        Button {
+                            isGridView.toggle()
+                        } label: {
+                            Image(systemName: isGridView ? "list.bullet" : "square.grid.2x2")
+                                .foregroundStyle(.blue)
+                        }
+                        
+                        // Settings button (de-emphasized)
+                        Button {
+                            showSettings = true
+                        } label: {
+                            Image(systemName: "gearshape.fill")
+                                .foregroundStyle(.secondary)
+                        }
                     }
                 }
             }
@@ -282,6 +293,7 @@ struct SectionedFeedListView: View {
                 }
             }
             .padding()
+
         }
         .refreshable {
             // Trigger refresh
