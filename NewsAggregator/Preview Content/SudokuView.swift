@@ -5,6 +5,7 @@ struct SudokuView: View {
     @ObservedObject var viewModel: RSSFeedViewModel
     @Environment(\.dismiss) private var dismiss
     @StateObject private var game = SudokuGame()
+    @State private var hasTrackedPlay = false
     
     var body: some View {
         NavigationView {
@@ -16,6 +17,7 @@ struct SudokuView: View {
                         CompletionView {
                             viewModel.puzzleProgress.sudokuCompleted = true
                             viewModel.savePuzzleProgress()
+                            viewModel.activityTracker.trackPuzzlePlay(gameType: "Sudoku", completed: true)
                             dismiss()
                         }
                     } else {
@@ -46,6 +48,12 @@ struct SudokuView: View {
                     }
                 }
                 .padding(.vertical)
+                .onAppear {
+                    if !hasTrackedPlay {
+                        viewModel.activityTracker.trackPuzzlePlay(gameType: "Sudoku", completed: false)
+                        hasTrackedPlay = true
+                    }
+                }
             }
             .navigationTitle("Daily Sudoku")
             .navigationBarTitleDisplayMode(.inline)

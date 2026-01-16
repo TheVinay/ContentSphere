@@ -36,7 +36,8 @@ struct ContentView: View {
                     },
                     onSportsTapped: {
                         // Sports preferences - placeholder for now since this view isn't being used
-                    }
+                    },
+                    enabledCategories: viewModel.enabledCategories()
                 )
                 .padding(.vertical, 8)
                 
@@ -130,6 +131,7 @@ struct ContentView: View {
             }
             .sheet(item: $selectedFeed) { feed in
                 FeedDetailView(feed: feed, viewModel: viewModel)
+                    .presentationDragIndicator(.visible)
             }
             .sheet(isPresented: $showInvestingSubcategories) {
                 InvestingSubcategoryView(

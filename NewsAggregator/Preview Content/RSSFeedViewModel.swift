@@ -17,11 +17,14 @@ class RSSFeedViewModel: ObservableObject {
     @Published var sportsPreferences: [SportsPreference] = []
     @Published var customTopics: Set<String> = []
     @Published var puzzleProgress: PuzzleProgress = PuzzleProgress()
+    @Published var categoryPreferences: [CategoryPreference] = []
     
     private let parser = RSSParser()
     private let defaults = UserDefaults.standard
     private let searchEngine = SearchEngine()
     private let intelligenceEngine = ArticleIntelligenceEngine()
+    let activityTracker = ActivityTracker()
+    let signalEngine = SignalEngine()
     
     // MARK: - UserDefaults Keys
     private enum Keys {
@@ -33,6 +36,7 @@ class RSSFeedViewModel: ObservableObject {
         static let sportsPreferences = "sports_preferences"
         static let customTopics = "custom_topics"
         static let puzzleProgress = "puzzle_progress"
+        static let categoryPreferences = "category_preferences"
     }
     
     // MARK: - Initialization
@@ -43,6 +47,9 @@ class RSSFeedViewModel: ObservableObject {
         // Initialize sports preferences
         self.sportsPreferences = Self.defaultSportsPreferences()
         
+        // Initialize category preferences
+        self.categoryPreferences = Self.defaultCategoryPreferences()
+        
         // Load persisted data
         loadBookmarks()
         loadReadArticles()
@@ -52,6 +59,14 @@ class RSSFeedViewModel: ObservableObject {
         loadSportsPreferences()
         loadCustomTopics()
         loadPuzzleProgress()
+        loadCategoryPreferences()
+    }
+    
+    // MARK: - Default Category Preferences
+    static func defaultCategoryPreferences() -> [CategoryPreference] {
+        FeedCategory.allCases.enumerated().map { index, category in
+            CategoryPreference(category: category, isEnabled: true, priority: index)
+        }
     }
     
     // MARK: - Default Sports Preferences
@@ -84,8 +99,13 @@ class RSSFeedViewModel: ObservableObject {
             FeedSource(name: "Variety", url: "https://variety.com/feed/", category: .entertainment),
             FeedSource(name: "Hollywood Reporter", url: "https://www.hollywoodreporter.com/feed/", category: .entertainment),
             
-            FeedSource(name: "Health Line", url: "https://www.healthline.com/rss", category: .health),
-            FeedSource(name: "WebMD", url: "https://rssfeeds.webmd.com/rss/rss.aspx?RSSSource=RSS_PUBLIC", category: .health),
+            FeedSource(name: "Medical News Today", url: "https://www.medicalnewstoday.com/rss", category: .health),
+            FeedSource(name: "STAT News", url: "https://www.statnews.com/feed/", category: .health),
+            FeedSource(name: "NIH Health News", url: "https://www.nlm.nih.gov/news/rss.xml", category: .health),
+            FeedSource(name: "CDC Newsroom", url: "https://tools.cdc.gov/api/v2/resources/media/403372.rss", category: .health),
+            FeedSource(name: "WHO News", url: "https://www.who.int/rss-feeds/news-english.xml", category: .health),
+            FeedSource(name: "ScienceDaily Health", url: "https://www.sciencedaily.com/rss/health.xml", category: .health),
+            FeedSource(name: "Nature Medical Research", url: "https://www.nature.com/subjects/medical-research.rss", category: .health),
             
             FeedSource(name: "MarketWatch", url: "https://www.marketwatch.com/rss/", category: .finance),
             FeedSource(name: "Bloomberg", url: "https://feeds.bloomberg.com/markets/news.rss", category: .finance),
@@ -188,6 +208,9 @@ class RSSFeedViewModel: ObservableObject {
         // Generate "Why This Matters" context for each article
         enrichArticlesWithContext(category: targetCategory, subcategory: subcategory)
         
+        // Generate signals
+        signalEngine.generateSignals(from: newsFeeds)
+        
         loadingState = newsFeeds.isEmpty ? .error("No articles found") : .loaded
     }
     
@@ -243,6 +266,12 @@ class RSSFeedViewModel: ObservableObject {
     func markAsRead(_ feed: NewsFeed) {
         readArticles.insert(feed.id)
         saveReadArticles()
+        
+        // Track reading activity
+        if let sourceName = feed.sourceName,
+           let source = feedSources.first(where: { $0.name == sourceName }) {
+            activityTracker.trackArticleRead(articleId: feed.id, category: source.category.rawValue)
+        }
     }
     
     func isRead(_ feed: NewsFeed) -> Bool {
@@ -476,5 +505,26 @@ class RSSFeedViewModel: ObservableObject {
            let decoded = try? JSONDecoder().decode(PuzzleProgress.self, from: data) {
             puzzleProgress = decoded
         }
+    }
+    
+    // MARK: - Category Preferences
+    func saveCategoryPreferences() {
+        if let encoded = try? JSONEncoder().encode(categoryPreferences) {
+            defaults.set(encoded, forKey: Keys.categoryPreferences)
+        }
+    }
+    
+    private func loadCategoryPreferences() {
+        if let data = defaults.data(forKey: Keys.categoryPreferences),
+           let decoded = try? JSONDecoder().decode([CategoryPreference].self, from: data) {
+            categoryPreferences = decoded
+        }
+    }
+    
+    func enabledCategories() -> [FeedCategory] {
+        categoryPreferences
+            .filter { $0.isEnabled }
+            .sorted { $0.priority < $1.priority }
+            .map { $0.category }
     }
 }

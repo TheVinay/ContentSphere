@@ -5,6 +5,7 @@ struct WordTargetView: View {
     @ObservedObject var viewModel: RSSFeedViewModel
     @Environment(\.dismiss) private var dismiss
     @StateObject private var game = WordTargetGame()
+    @State private var hasTrackedPlay = false
     
     var body: some View {
         NavigationView {
@@ -16,6 +17,7 @@ struct WordTargetView: View {
                         ResultView(game: game) {
                             viewModel.puzzleProgress.wordTargetCompleted = true
                             viewModel.savePuzzleProgress()
+                            viewModel.activityTracker.trackPuzzlePlay(gameType: "Word Target", completed: true)
                             dismiss()
                         }
                     } else {
@@ -29,6 +31,12 @@ struct WordTargetView: View {
                     }
                 }
                 .padding()
+                .onAppear {
+                    if !hasTrackedPlay {
+                        viewModel.activityTracker.trackPuzzlePlay(gameType: "Word Target", completed: false)
+                        hasTrackedPlay = true
+                    }
+                }
             }
             .navigationTitle("Word Target")
             .navigationBarTitleDisplayMode(.inline)

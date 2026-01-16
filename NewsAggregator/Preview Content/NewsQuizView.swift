@@ -70,6 +70,7 @@ struct NewsQuizView: View {
             }
             .onAppear {
                 generateQuestions()
+                viewModel.activityTracker.trackPuzzlePlay(gameType: "Quiz", completed: false)
             }
         }
     }
@@ -98,6 +99,7 @@ struct NewsQuizView: View {
             selectedAnswer = nil
         } else {
             showingResults = true
+            viewModel.activityTracker.trackPuzzlePlay(gameType: "Quiz", completed: true)
         }
     }
 }

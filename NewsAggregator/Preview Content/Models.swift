@@ -77,7 +77,7 @@ struct FeedSource: Identifiable, Codable, Hashable {
 }
 
 // MARK: - Feed Category
-enum FeedCategory: String, CaseIterable, Codable {
+enum FeedCategory: String, CaseIterable, Codable, Identifiable {
     case news = "News"
     case technology = "Technology"
     case sports = "Sports"
@@ -88,6 +88,8 @@ enum FeedCategory: String, CaseIterable, Codable {
     case food = "Food"
     case travel = "Travel"
     case gaming = "Gaming"
+    
+    var id: String { rawValue }
     
     var iconName: String {
         switch self {
@@ -244,6 +246,21 @@ struct SportsPreference: Identifiable, Codable {
     init(id: UUID = UUID(), subcategory: SportsSubcategory, isEnabled: Bool = true, priority: Int) {
         self.id = id
         self.subcategory = subcategory
+        self.isEnabled = isEnabled
+        self.priority = priority
+    }
+}
+
+// MARK: - Category Preference
+struct CategoryPreference: Identifiable, Codable {
+    let id: UUID
+    let category: FeedCategory
+    var isEnabled: Bool
+    var priority: Int
+    
+    init(id: UUID = UUID(), category: FeedCategory, isEnabled: Bool = true, priority: Int) {
+        self.id = id
+        self.category = category
         self.isEnabled = isEnabled
         self.priority = priority
     }

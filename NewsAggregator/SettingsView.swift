@@ -6,10 +6,26 @@ struct SettingsView: View {
     @ObservedObject var viewModel: RSSFeedViewModel
     @Environment(\.dismiss) private var dismiss
     @State private var showEditFeeds = false
+    @State private var showInsights = false
+    @State private var showCategories = false
     
     var body: some View {
         NavigationView {
             List {
+                // Insights Section
+                Section {
+                    Button {
+                        showInsights = true
+                    } label: {
+                        Label("Insights", systemImage: "chart.bar.fill")
+                    }
+                    .foregroundStyle(.primary)
+                } header: {
+                    Text("Activity")
+                } footer: {
+                    Text("View your reading and puzzle activity")
+                }
+                
                 // Appearance Section
                 Section {
                     Toggle(isOn: $viewModel.isDarkModeEnabled) {
@@ -28,15 +44,22 @@ struct SettingsView: View {
                 // Feed Sources Section
                 Section {
                     Button {
+                        showCategories = true
+                    } label: {
+                        Label("Manage Categories", systemImage: "square.grid.2x2")
+                    }
+                    .foregroundStyle(.primary)
+                    
+                    Button {
                         showEditFeeds = true
                     } label: {
                         Label("Manage Feed Sources", systemImage: "list.bullet.rectangle")
-                            .foregroundStyle(.primary)
                     }
+                    .foregroundStyle(.primary)
                 } header: {
                     Text("Content")
                 } footer: {
-                    Text("Add, remove, or toggle feed sources for each category")
+                    Text("Customize categories and feed sources")
                 }
                 
                 // About Section
@@ -76,6 +99,12 @@ struct SettingsView: View {
             }
             .sheet(isPresented: $showEditFeeds) {
                 EditFeedsView(viewModel: viewModel)
+            }
+            .sheet(isPresented: $showInsights) {
+                InsightsView(activityTracker: viewModel.activityTracker, signalEngine: viewModel.signalEngine)
+            }
+            .sheet(isPresented: $showCategories) {
+                CategoryManagementView(viewModel: viewModel)
             }
         }
     }

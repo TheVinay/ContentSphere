@@ -64,6 +64,7 @@ struct HeadlinesView: View {
             }
             .sheet(item: $selectedFeed) { feed in
                 FeedDetailView(feed: feed, viewModel: viewModel)
+                    .presentationDragIndicator(.visible)
             }
             .task {
                 if viewModel.newsFeeds.isEmpty {

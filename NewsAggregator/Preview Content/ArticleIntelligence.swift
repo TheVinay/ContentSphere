@@ -27,6 +27,16 @@ struct ArticleContext: Codable, Hashable {
     }
 }
 
+// MARK: - What This Means (Implications)
+struct ArticleImplications: Codable, Hashable {
+    let bullets: [String]
+    
+    /// Returns true if there are meaningful implications to show
+    var hasImplications: Bool {
+        !bullets.isEmpty
+    }
+}
+
 // MARK: - Intelligence Engine
 @MainActor
 class ArticleIntelligenceEngine {
@@ -350,5 +360,298 @@ class ArticleIntelligenceEngine {
     
     private func containsAny(in text: String, keywords: [String]) -> Bool {
         keywords.contains { text.contains($0) }
+    }
+    
+    // MARK: - Article Implications ("What This Means")
+    
+    /// Generate "What This Means" bullet points for an article
+    /// Returns up to 3 implication bullets based on category, keywords, and context
+    func generateImplications(
+        for article: NewsFeed,
+        category: FeedCategory?,
+        subcategory: InvestingSubcategory? = nil,
+        sportsSubcategory: SportsSubcategory? = nil
+    ) -> ArticleImplications? {
+        
+        let title = article.title.lowercased()
+        let content = article.displayContent.lowercased()
+        let combinedText = title + " " + content
+        
+        var bullets: [String] = []
+        
+        // Category-specific implications
+        if let cat = category {
+            bullets = generateCategoryImplications(cat, title: title, content: combinedText, subcategory: subcategory, sportsSubcategory: sportsSubcategory)
+        }
+        
+        // Cross-cutting implications (political, regulatory, etc.)
+        bullets.append(contentsOf: generateCrossCuttingImplications(title: title, content: combinedText))
+        
+        // Limit to 3 bullets
+        let finalBullets = Array(bullets.prefix(3))
+        
+        guard !finalBullets.isEmpty else { return nil }
+        
+        return ArticleImplications(bullets: finalBullets)
+    }
+    
+    // MARK: - Category-Specific Implications
+    
+    private func generateCategoryImplications(
+        _ category: FeedCategory,
+        title: String,
+        content: String,
+        subcategory: InvestingSubcategory?,
+        sportsSubcategory: SportsSubcategory?
+    ) -> [String] {
+        
+        var bullets: [String] = []
+        
+        switch category {
+        case .technology:
+            if containsAny(in: content, keywords: ["ai", "artificial intelligence", "machine learning", "chatgpt"]) {
+                bullets.append("Could reshape labor markets and productivity expectations")
+                bullets.append("May influence tech stock valuations and investor sentiment")
+            }
+            if containsAny(in: content, keywords: ["privacy", "data", "regulation", "antitrust"]) {
+                bullets.append("Signals potential regulatory changes for tech companies")
+                bullets.append("May affect how platforms collect and monetize user data")
+            }
+            if containsAny(in: content, keywords: ["iphone", "apple", "ios", "vision pro"]) {
+                bullets.append("Could impact Apple's product roadmap and pricing strategy")
+            }
+            if containsAny(in: content, keywords: ["layoff", "hiring", "job cuts"]) {
+                bullets.append("Indicates shifting priorities in the tech sector")
+            }
+            
+        case .investing:
+            if let sub = subcategory {
+                bullets.append(contentsOf: generateInvestingImplications(sub, title: title, content: content))
+            } else {
+                // General investing
+                if containsAny(in: content, keywords: ["bull market", "rally", "surge"]) {
+                    bullets.append("Suggests positive momentum for equity allocations")
+                }
+                if containsAny(in: content, keywords: ["correction", "sell-off", "decline"]) {
+                    bullets.append("May create buying opportunities for long-term investors")
+                }
+            }
+            
+        case .finance:
+            if containsAny(in: content, keywords: ["fed", "federal reserve", "interest rate", "rate hike", "rate cut"]) {
+                bullets.append("Affects mortgage rates, savings yields, and borrowing costs")
+                bullets.append("Could shift allocation between bonds and equities")
+            }
+            if containsAny(in: content, keywords: ["inflation", "cpi", "consumer prices"]) {
+                bullets.append("Influences purchasing power and cost of living")
+                bullets.append("May affect Fed policy and market expectations")
+            }
+            if containsAny(in: content, keywords: ["recession", "economic downturn", "gdp"]) {
+                bullets.append("Signals potential headwinds for corporate earnings")
+                bullets.append("Could favor defensive sectors and quality stocks")
+            }
+            if containsAny(in: content, keywords: ["unemployment", "jobs", "labor market"]) {
+                bullets.append("Indicates economic health and consumer spending power")
+            }
+            
+        case .health:
+            if containsAny(in: content, keywords: ["fda", "approval", "drug", "treatment"]) {
+                bullets.append("May impact healthcare and biotech stock prices")
+                bullets.append("Could change treatment options for patients")
+            }
+            if containsAny(in: content, keywords: ["vaccine", "pandemic", "outbreak"]) {
+                bullets.append("Could influence public health policy debates")
+                bullets.append("May affect travel, hospitality, and pharmaceutical sectors")
+            }
+            if containsAny(in: content, keywords: ["medicare", "insurance", "healthcare cost"]) {
+                bullets.append("Signals potential changes in healthcare affordability")
+            }
+            
+        case .news:
+            if containsAny(in: content, keywords: ["election", "vote", "campaign"]) {
+                bullets.append("Could affect policy direction and market regulations")
+                bullets.append("May influence sector-specific legislation")
+            }
+            if containsAny(in: content, keywords: ["climate", "environment", "emissions"]) {
+                bullets.append("Signals policy shifts affecting energy and transportation")
+                bullets.append("May accelerate clean energy investment themes")
+            }
+            if containsAny(in: content, keywords: ["trade", "tariff", "sanctions"]) {
+                bullets.append("Could disrupt global supply chains and pricing")
+                bullets.append("May affect multinational corporations and importers")
+            }
+            
+        case .sports:
+            if containsAny(in: content, keywords: ["injury", "out for season"]) {
+                bullets.append("Could shift playoff odds and team performance expectations")
+            }
+            if containsAny(in: content, keywords: ["trade", "signing", "contract"]) {
+                bullets.append("May reshape competitive balance and team dynamics")
+            }
+            if containsAny(in: content, keywords: ["controversy", "suspension", "investigation"]) {
+                bullets.append("Could affect team reputation and sponsor relationships")
+            }
+            
+        case .entertainment:
+            if containsAny(in: content, keywords: ["strike", "union", "writers", "actors"]) {
+                bullets.append("May delay productions and affect streaming content pipelines")
+                bullets.append("Signals broader labor issues in entertainment industry")
+            }
+            if containsAny(in: content, keywords: ["box office", "streaming", "ratings"]) {
+                bullets.append("Indicates shifting consumer preferences in media")
+            }
+            
+        case .gaming:
+            if containsAny(in: content, keywords: ["console", "playstation", "xbox", "nintendo"]) {
+                bullets.append("Could influence gaming hardware sales and ecosystem growth")
+            }
+            if containsAny(in: content, keywords: ["microtransaction", "regulation", "loot box"]) {
+                bullets.append("May affect game monetization and industry practices")
+            }
+            
+        case .food:
+            if containsAny(in: content, keywords: ["recall", "contamination", "safety"]) {
+                bullets.append("Signals potential health risks and supply disruptions")
+            }
+            if containsAny(in: content, keywords: ["shortage", "supply chain", "price"]) {
+                bullets.append("Could affect grocery costs and restaurant pricing")
+            }
+            
+        case .travel:
+            if containsAny(in: content, keywords: ["airline", "flight", "cancellation"]) {
+                bullets.append("May impact travel plans and booking strategies")
+            }
+            if containsAny(in: content, keywords: ["restriction", "border", "visa"]) {
+                bullets.append("Could affect international travel accessibility")
+            }
+        }
+        
+        return bullets
+    }
+    
+    // MARK: - Investing Subcategory Implications
+    
+    private func generateInvestingImplications(
+        _ subcategory: InvestingSubcategory,
+        title: String,
+        content: String
+    ) -> [String] {
+        
+        var bullets: [String] = []
+        
+        switch subcategory {
+        case .stocks:
+            if containsAny(in: content, keywords: ["earnings beat", "exceeds expectations", "revenue growth"]) {
+                bullets.append("May drive upward price momentum and analyst upgrades")
+                bullets.append("Signals strong fundamentals for the company")
+            }
+            if containsAny(in: content, keywords: ["earnings miss", "disappoints", "guidance lower"]) {
+                bullets.append("Could trigger sell-off and downward revisions")
+                bullets.append("May present buying opportunity if reaction is overblown")
+            }
+            if containsAny(in: content, keywords: ["upgrade", "downgrade", "price target"]) {
+                bullets.append("Analyst changes often move stock prices in the short term")
+            }
+            
+        case .etfs:
+            if containsAny(in: content, keywords: ["inflow", "assets", "popularity"]) {
+                bullets.append("Indicates growing investor interest in this theme")
+                bullets.append("May amplify price movements in underlying holdings")
+            }
+            if containsAny(in: content, keywords: ["fee", "expense ratio", "cost"]) {
+                bullets.append("Lower costs improve long-term returns for index investors")
+            }
+            
+        case .longTermThemes:
+            if containsAny(in: content, keywords: ["ai", "artificial intelligence"]) {
+                bullets.append("Accelerates secular growth in AI infrastructure and applications")
+                bullets.append("May benefit semiconductor, cloud, and software companies")
+            }
+            if containsAny(in: content, keywords: ["clean energy", "renewable", "solar", "wind"]) {
+                bullets.append("Supports long-term transition to sustainable energy")
+                bullets.append("Could attract ESG-focused capital flows")
+            }
+            if containsAny(in: content, keywords: ["healthcare", "biotech", "genomics"]) {
+                bullets.append("Signals innovation in life sciences and longevity")
+            }
+            
+        case .earningsAndFundamentals:
+            if containsAny(in: content, keywords: ["free cash flow", "margin", "profitability"]) {
+                bullets.append("Strong fundamentals support higher valuations")
+            }
+            if containsAny(in: content, keywords: ["debt", "leverage", "balance sheet"]) {
+                bullets.append("Financial health affects risk profile and credit ratings")
+            }
+            
+        case .dividendsAndIncome:
+            if containsAny(in: content, keywords: ["dividend increase", "raise", "hike"]) {
+                bullets.append("Signals management confidence and shareholder returns")
+                bullets.append("May attract income-focused investors")
+            }
+            if containsAny(in: content, keywords: ["dividend cut", "suspend", "reduce"]) {
+                bullets.append("Indicates financial stress or capital reallocation")
+            }
+            if containsAny(in: content, keywords: ["yield", "payout ratio"]) {
+                bullets.append("Affects income stream for dividend portfolios")
+            }
+            
+        case .portfolioStrategy:
+            if containsAny(in: content, keywords: ["diversification", "allocation", "rebalance"]) {
+                bullets.append("Highlights importance of portfolio construction")
+            }
+            if containsAny(in: content, keywords: ["60/40", "stocks", "bonds"]) {
+                bullets.append("May affect traditional stock-bond allocation models")
+            }
+            
+        case .riskAndVolatility:
+            if containsAny(in: content, keywords: ["vix", "volatility spike", "fear index"]) {
+                bullets.append("Elevated volatility suggests caution and hedging strategies")
+                bullets.append("May create opportunities for contrarian investors")
+            }
+            if containsAny(in: content, keywords: ["crash", "correction", "bear market"]) {
+                bullets.append("Signals increased risk and potential for defensive positioning")
+            }
+            
+        case .macroAndRates:
+            if containsAny(in: content, keywords: ["fed", "federal reserve", "powell"]) {
+                bullets.append("Fed policy affects all asset classes and risk appetite")
+            }
+            if containsAny(in: content, keywords: ["yield curve", "inversion", "bonds"]) {
+                bullets.append("Yield curve shape signals recession risk and growth outlook")
+            }
+            if containsAny(in: content, keywords: ["inflation", "deflation", "cpi"]) {
+                bullets.append("Price trends affect real returns and central bank policy")
+            }
+        }
+        
+        return bullets
+    }
+    
+    // MARK: - Cross-Cutting Implications
+    
+    private func generateCrossCuttingImplications(title: String, content: String) -> [String] {
+        var bullets: [String] = []
+        
+        // Political and policy
+        if containsAny(in: content, keywords: ["congress", "senate", "legislation", "bill", "law"]) {
+            bullets.append("Legislative changes could ripple across multiple industries")
+        }
+        
+        // Regulatory
+        if containsAny(in: content, keywords: ["sec", "ftc", "regulator", "compliance"]) {
+            bullets.append("Signals growing regulatory scrutiny in this space")
+        }
+        
+        // Global events
+        if containsAny(in: content, keywords: ["china", "europe", "global", "international"]) {
+            bullets.append("International developments may affect U.S. markets and trade")
+        }
+        
+        // Consumer behavior
+        if containsAny(in: content, keywords: ["consumer", "spending", "retail", "shopping"]) {
+            bullets.append("Reflects changing consumer behavior and spending patterns")
+        }
+        
+        return bullets
     }
 }

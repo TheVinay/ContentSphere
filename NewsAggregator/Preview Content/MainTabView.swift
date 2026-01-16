@@ -3,40 +3,52 @@ import SwiftUI
 // MARK: - Main Tab View
 struct MainTabView: View {
     @StateObject private var viewModel = RSSFeedViewModel()
+    @State private var selectedTab = 0
     
     var body: some View {
-        TabView {
+        TabView(selection: $selectedTab) {
             // Home Tab
             HomeView(viewModel: viewModel)
                 .tabItem {
                     Label("Home", systemImage: "house.fill")
                 }
+                .tag(0)
             
             // Discover Tab
             DiscoverView(viewModel: viewModel)
                 .tabItem {
                     Label("Discover", systemImage: "sparkles")
                 }
+                .tag(1)
             
             // Headlines Tab
             HeadlinesView(viewModel: viewModel)
                 .tabItem {
                     Label("Headlines", systemImage: "newspaper.fill")
                 }
+                .tag(2)
             
             // Puzzles Tab
             PuzzlesView(viewModel: viewModel)
                 .tabItem {
                     Label("Puzzles", systemImage: "puzzlepiece.fill")
                 }
+                .tag(3)
             
             // Saved Tab
             SavedView(viewModel: viewModel)
                 .tabItem {
                     Label("Saved", systemImage: "bookmark.fill")
                 }
+                .tag(4)
         }
         .accentColor(.blue)
+        .onChange(of: selectedTab) { _, newValue in
+            let tabNames = ["Home", "Discover", "Headlines", "Puzzles", "Saved"]
+            if newValue < tabNames.count {
+                viewModel.activityTracker.trackTabVisit(tabNames[newValue])
+            }
+        }
     }
 }
 
@@ -78,7 +90,8 @@ struct HomeView: View {
                         if viewModel.selectedCategory == .sports {
                             showSportsPreferences = true
                         }
-                    }
+                    },
+                    enabledCategories: viewModel.enabledCategories()
                 )
                 .padding(.vertical, 8)
                 
@@ -349,11 +362,12 @@ struct CategoryTabsView: View {
     let onCategorySelected: (FeedCategory) -> Void
     let onInvestingTapped: () -> Void
     let onSportsTapped: () -> Void
+    let enabledCategories: [FeedCategory]
     
     var body: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 12) {
-                ForEach(FeedCategory.allCases, id: \.self) { category in
+                ForEach(enabledCategories, id: \.self) { category in
                     if category == .investing {
                         InvestingCategoryChip(
                             isSelected: selectedCategory == category,

@@ -1,7 +1,7 @@
 # 📱 News Aggregator iOS App - Project Manifest
 
-**Last Updated:** January 14, 2026  
-**Version:** 2.1.0  
+**Last Updated:** January 15, 2026  
+**Version:** 2.4.0  
 **Platform:** iOS 15.0+  
 **Language:** Swift 5.9+  
 **Framework:** SwiftUI
@@ -10,13 +10,120 @@
 
 ## 🎯 Project Overview
 
-A modern, feature-rich RSS news aggregator for iOS with **tab-based navigation**, **sectioned feeds (Apple News style)**, **sports preferences**, **personalized discovery**, **top headlines**, **daily puzzle games**, and **intelligent article context** that explains why each story matters. Users can browse, search, filter, and bookmark news articles from 50+ sources across 10 categories, customize sports priorities, discover personalized content, engage with daily puzzles, and receive contextual explanations for every article.
+A modern, feature-rich RSS news aggregator for iOS with **tab-based navigation**, **customizable categories**, **sectioned feeds**, **sports preferences**, **personalized discovery**, **top headlines**, **daily puzzle games**, **intelligent article context**, **article detail enhancements**, **story timeline tracking**, **activity insights**, and **pattern-based signals**. Users can browse, search, filter, and bookmark news articles from 50+ sources across 10 categories, track reading habits, spot emerging trends, and engage with contextual insights powered by local intelligence.
 
 ---
 
-## 🆕 Major New Features (v2.1 - Intelligence Layer)
+## 🆕 Major New Features (v2.4 - Signals)
 
-### **🧠 "Why This Matters" - Article Context Intelligence** ⚡ NEW
+### **🔔 Signals - Pattern Recognition** ⚡ NEW
+- **Lightweight, read-only feature** that surfaces meaningful patterns across news
+- **Located in Insights view** - no separate screen
+- **Automatically hidden** if no patterns detected
+- **Maximum 3-5 signals per day** - silence is acceptable
+
+#### **Signal Types:**
+
+**1. Topic Momentum**
+- Detects topics appearing multiple times today
+- Compares to 7-day rolling baseline
+- Triggers when today's count is 2x historical average
+- Example: *"AI regulation appeared in 6 articles today across 4 sources"*
+
+**2. Cross-Source Convergence**
+- Detects same topic across multiple distinct sources
+- Prioritizes high-credibility outlets (BBC, Reuters, Bloomberg, etc.)
+- Example: *"This topic is being covered by multiple high-credibility outlets"*
+
+#### **Implementation:**
+- **SignalEngine** - Runs locally, uses in-memory articles only
+- Simple keyword matching for 25+ key topics
+- Stores minimal baseline data in UserDefaults
+- Generates signals on feed refresh
+- **No AI, no network calls, no actions**
+
+#### **Design:**
+- Calm, neutral tone - no urgency
+- Simple text rows with subtle separators
+- No icons, no charts, no badges
+- Read-only (no taps, no CTAs)
+- Informational only
+
+---
+
+## 🆕 Major Features (v2.3 - Insights & Category Management)
+
+### **📊 Activity Insights** ⚡ NEW
+- **Reading Activity tracking:**
+  - Articles read today
+  - Articles read this week
+  - Total articles read (all-time)
+  - Most-read category
+- **App Usage metrics:**
+  - Most visited tab (Home, Discover, Headlines, Puzzles, Saved)
+- **Reading Streak** (only shown if active):
+  - Consecutive days with ≥1 article read
+- **Puzzle Statistics** (only shown if games played):
+  - Games played today / all-time
+  - Current puzzle streak
+  - Most played game (Quiz / Word Target / Sudoku)
+- **Accessible from Settings > Insights**
+- **Privacy-first:** All data stored locally, no analytics SDKs
+- **Automatic tracking:** Articles marked as read when opened, tab visits tracked, puzzle completions logged
+
+### **🎛️ Category Management** ⚡ NEW
+- **Customizable category order:** Drag-and-drop reordering
+- **Show/hide categories:** Toggle categories on/off
+- **Persistent preferences:** Order and visibility saved across sessions
+- **Smart switching:** Auto-switches to next enabled category when current is disabled
+- **Accessible from Settings > Manage Categories**
+- **Edit mode:** Tap "Edit" to reorder, "Done" to save
+
+### **🎨 UI/UX Improvements (v2.3)**
+- Article detail automatically marks articles as read
+- Tab switching tracked for insights
+- Puzzle play and completion tracking
+- Consistent text styling in Settings
+- Better category management UX
+
+---
+
+## 🆕 Major Features (v2.2 - Article Detail Enhancements)
+
+### **💡 "What This Means" - Article Implications**
+- **Expandable insight section** in article detail view only
+- Located below article title, above article body
+- **Progressive disclosure** - collapsed by default with chevron indicator
+- Shows **up to 3 bullet points** explaining:
+  - Potential implications
+  - Market/policy signals
+  - Broader impacts across sectors
+- **Rule-based generation** using keywords and category context
+- Examples:
+  - "Could reshape labor markets and productivity expectations"
+  - "Affects mortgage rates, savings yields, and borrowing costs"
+  - "May drive upward price momentum and analyst upgrades"
+  - "Signals potential regulatory changes for tech companies"
+- **Purple accent color** with lightbulb icon for discoverability
+- Only appears when meaningful implications can be generated
+
+### **🕐 "Story Timeline" - Related Articles**
+- **Shows related articles** based on keyword overlap
+- Located below article title in detail view
+- **Progressive disclosure** - collapsed by default
+- **Blue accent color** with clock icon
+- Lists up to 5 related articles chronologically (oldest → newest)
+- Each entry shows:
+  - Relative date (e.g., "2 hours ago")
+  - Article headline (2 line limit)
+- Requires minimum 2 related articles to display
+- Uses in-memory articles only (no network calls)
+
+---
+
+## 🆕 Major Features (v2.1 - Intelligence Layer)
+
+### **🧠 "Why This Matters" - Article Context Intelligence**
 - **Contextual explanations** appear below every article headline
 - **Color-coded insights** by context type:
   - 🔵 Blue - Category relevance
@@ -33,21 +140,115 @@ A modern, feature-rich RSS news aggregator for iOS with **tab-based navigation**
   - "Long-term growth theme with multi-year investment potential"
   - "Breaking market news may trigger immediate price action"
 
-### **Implementation Details:**
-- `ArticleIntelligenceEngine` - Generates context using category, keywords, and user behavior
-- Context appears in:
-  - List view cards (2 lines with lightbulb icon)
-  - Grid view cards (compact 1-line format)
-  - Hero headline cards (yellow text for visibility)
-  - Regular headline cards (full context)
-- Real-time generation after feed fetching
-- Persistent across app sessions
+---
+
+## 📁 Key Files
+
+### **NEW FILES (v2.3):**
+
+#### **ActivityTracker.swift** - Reading & Puzzle Activity Tracking
+- `ReadingActivity` - Tracks articles read by date and category
+- `PuzzleActivity` - Tracks puzzle plays and streaks
+- `ActivityTracker` - Main tracker class with persistence
+- Automatic streak calculation
+- Daily record cleanup
+- UserDefaults persistence
+
+#### **InsightsView.swift** - Activity Insights UI
+- Clean, minimal stat cards
+- Reading activity section
+- App usage section
+- Reading streak (conditional)
+- Puzzle stats (conditional)
+- System colors only, no charts
+
+#### **CategoryManagementView.swift** - Category Order & Visibility
+- Drag-and-drop reordering with Edit mode
+- Toggle categories on/off
+- Smart category switching when disabled
+- Color-coded category icons
+- Persistent preferences
+
+### **UPDATED FILES (v2.3):**
+
+#### **Models.swift**
+- Added `Identifiable` to `FeedCategory` enum
+- Added `CategoryPreference` struct for ordering/visibility
+
+#### **RSSFeedViewModel.swift**
+- Added `activityTracker: ActivityTracker` instance
+- Added `categoryPreferences: [CategoryPreference]`
+- Added `markAsRead()` tracking
+- Added category preference persistence
+- Added `enabledCategories()` helper
+
+#### **SettingsView.swift**
+- Added "Insights" button
+- Added "Manage Categories" button
+- Consistent text/icon styling
+
+#### **FeedDetailView.swift**
+- Added `.onAppear { viewModel.markAsRead(feed) }`
+
+#### **MainTabView.swift**
+- Added tab switching tracking
+- Added `enabledCategories` parameter to `CategoryTabsView`
+
+#### **Puzzle Views (NewsQuizView, WordTargetView, SudokuView)**
+- Added puzzle play tracking on appear
+- Added completion tracking on finish
 
 ---
 
-## 🆕 Major Features (v2.0)
+## 🎯 Current Feature Set
 
-### **1. Tab-Based Navigation** 🎨
+### **Core Functionality**
+- RSS feed parsing from 50+ sources
+- 10 news categories
+- Search with natural language
+- Bookmarking system
+- Read/unread tracking
+- Dark mode
+- Grid/list view toggle
+
+### **Intelligence & Context**
+- "Why This Matters" explanations
+- "What This Means" implications
+- Story Timeline (related articles)
+- Category-specific insights
+- Confidence-based filtering
+
+### **Personalization**
+- Custom category order
+- Show/hide categories
+- Sports preferences
+- Discover tab for topic selection
+- Reading activity tracking
+- Tab visit tracking
+
+### **Gamification**
+- News Quiz (5 questions)
+- Word Target (Wordle-style)
+- Daily Sudoku
+- Puzzle streaks
+- Completion tracking
+
+### **Analytics (Privacy-First)**
+- Reading habits
+- Category preferences
+- Tab usage
+- Puzzle activity
+- All data stored locally
+
+---
+
+## 🔄 Version History
+
+- **v2.3.0** (Jan 15, 2026) - Activity Insights & Category Management
+- **v2.2.0** (Jan 15, 2026) - Article Detail Enhancements (What This Means, Story Timeline)
+- **v2.1.0** (Jan 14, 2026) - Intelligence Layer (Why This Matters)
+- **v2.0.0** - Tab Navigation, Sports Preferences, Puzzles, Headlines, Discover
+- **v1.0.0** - Initial RSS aggregator with categories and bookmarks
 - 5 main tabs: Home, Discover, Headlines, Puzzles, Saved
 - Modern iOS app structure
 - Easy navigation between major features
