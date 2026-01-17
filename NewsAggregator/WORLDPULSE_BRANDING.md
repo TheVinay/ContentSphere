@@ -1,10 +1,10 @@
-# 🌍 Global Pulse Branding Update
+# 🌍 ContentSphere Branding Update
 
 ## Implementation Summary (January 16, 2026)
 
 ### **What Changed:**
 
-Updated the **Home tab only** to use "Global Pulse" branding with a subtle tagline.
+Updated the **Home tab only** to use "ContentSphere" branding with a subtle tagline.
 
 ---
 
@@ -14,7 +14,7 @@ Updated the **Home tab only** to use "Global Pulse" branding with a subtle tagli
 
 #### **1. Navigation Title**
 - **Before:** `.navigationTitle("News")`
-- **After:** `.navigationTitle("Global Pulse")`
+- **After:** `.navigationTitle("ContentSphere")`
 - **Style:** `.large` (unchanged)
 - **Color:** System `.primary` (supports dark/light mode automatically)
 
@@ -67,7 +67,7 @@ HStack {
 
 ```
 ┌─────────────────────────────────────┐
-│  < Back       Global Pulse       ⋯  │  ← Large navigation title
+│  < Back     ContentSphere        ⋯  │  ← Large navigation title
 │                                     │
 │  What's moving the world right now  │  ← Subtle subheader (.secondary)
 │                                     │
@@ -88,7 +88,7 @@ HStack {
 - Generic app name
 
 ### **After:**
-- Navigation title: "Global Pulse"
+- Navigation title: "ContentSphere"
 - Tagline: "What's moving the world right now"
 - Clear brand identity
 - Conveys purpose immediately
@@ -110,7 +110,7 @@ HStack {
 - ✅ Search, categories, feeds unchanged
 
 ### **Accessibility:**
-- ✅ VoiceOver reads "Global Pulse" as title
+- ✅ VoiceOver reads "ContentSphere" as title
 - ✅ Dynamic Type supported (`.caption` scales)
 - ✅ High contrast mode supported (system colors)
 - ✅ Dark mode fully supported
@@ -119,7 +119,7 @@ HStack {
 
 ## Testing Checklist
 
-- [x] Navigation title displays "Global Pulse"
+- [x] Navigation title displays "ContentSphere"
 - [x] Large title style active
 - [x] Subheader visible below title
 - [x] Text color is subtle (secondary)
@@ -136,9 +136,9 @@ HStack {
 
 ## Brand Guidelines
 
-### **Name:** Global Pulse
-- Two words with space
-- Capital G, capital P
+### **Name:** ContentSphere
+- Single word, no space
+- Capital C, capital S
 - No special characters
 - No trademark symbols
 
@@ -167,7 +167,7 @@ HStack {
 If expanding branding in the future:
 
 1. **Consistent usage** across all tabs
-2. **App icon** with Global Pulse branding
+2. **App icon** with ContentSphere branding
 3. **Launch screen** with logo
 4. **About page** with mission statement
 5. **Share sheet** custom messaging
@@ -178,12 +178,12 @@ But for now: **Home tab only, minimal and clean.**
 
 ## Rationale
 
-### **Why "Global Pulse"?**
-- Conveys global news coverage
-- "Pulse" = real-time, current events
-- Memorable and distinctive
-- Professional and serious
-- Not too casual or playful
+### **Why "ContentSphere"?**
+- Conveys comprehensive content coverage from all angles
+- "Sphere" = complete, 360-degree view of news
+- Modern and tech-forward naming
+- Professional and innovative
+- Emphasizes comprehensive global perspective
 
 ### **Why This Tagline?**
 - Explains the value proposition
@@ -203,4 +203,4 @@ But for now: **Home tab only, minimal and clean.**
 
 **Implementation Complete! 🎉**
 
-The Home tab now displays "Global Pulse" branding with a subtle, professional tagline that supports the app's mission of delivering important global news in real-time.
+The Home tab now displays "ContentSphere" branding with a subtle, professional tagline that supports the app's mission of delivering important global news in real-time.

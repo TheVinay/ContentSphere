@@ -5,9 +5,9 @@
       location = "self:">
    </FileRef>
    <FileRef
-      location = "group:Models.swift">
+      location = "group:GLOBALPULSE_FINAL.md">
    </FileRef>
    <FileRef
-      location = "group:REVAMP_SUMMARY.md">
+      location = "group:WORLDBRIEF_BRAND.md">
    </FileRef>
 </Workspace>

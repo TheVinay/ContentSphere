@@ -199,7 +199,7 @@ struct HomeView: View {
                     }
                 }
             }
-            .navigationTitle("Global Pulse")
+            .navigationTitle("ContentSphere")
             .navigationBarTitleDisplayMode(.large)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
