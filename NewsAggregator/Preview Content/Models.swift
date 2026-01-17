@@ -1,4 +1,5 @@
 import Foundation
+import CoreLocation
 
 // MARK: - News Feed Model
 struct NewsFeed: Identifiable, Codable, Hashable {
@@ -11,6 +12,7 @@ struct NewsFeed: Identifiable, Codable, Hashable {
     let sourceName: String?
     let description: String?
     var context: ArticleContext? // "Why This Matters" intelligence
+    var location: ArticleLocation? // NEW: Spatial intelligence
     
     init(
         id: UUID = UUID(),
@@ -21,7 +23,8 @@ struct NewsFeed: Identifiable, Codable, Hashable {
         content: String? = nil,
         sourceName: String? = nil,
         description: String? = nil,
-        context: ArticleContext? = nil
+        context: ArticleContext? = nil,
+        location: ArticleLocation? = nil
     ) {
         self.id = id
         self.title = title
@@ -32,6 +35,7 @@ struct NewsFeed: Identifiable, Codable, Hashable {
         self.sourceName = sourceName
         self.description = description
         self.context = context
+        self.location = location
     }
     
     var formattedDate: String {
@@ -272,5 +276,25 @@ enum LoadingState: Equatable {
     case loading
     case loaded
     case error(String)
+}
+
+// MARK: - Spatial Intelligence
+/// Represents a detected geographic location in an article
+struct ArticleLocation: Codable, Hashable {
+    let detectedLocation: String      // Display name (e.g., "Paris, France")
+    let latitude: Double
+    let longitude: Double
+    let confidenceScore: Double       // 0.0 - 1.0
+    
+    var coordinate: CLLocationCoordinate2D {
+        CLLocationCoordinate2D(latitude: latitude, longitude: longitude)
+    }
+    
+    init(detectedLocation: String, latitude: Double, longitude: Double, confidenceScore: Double) {
+        self.detectedLocation = detectedLocation
+        self.latitude = latitude
+        self.longitude = longitude
+        self.confidenceScore = confidenceScore
+    }
 }
 

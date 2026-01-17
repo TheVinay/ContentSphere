@@ -9,9 +9,15 @@ import SwiftUI
 
 @main
 struct NewsAggregatorApp: App {
+    @AppStorage("didCompleteOnboarding") private var didCompleteOnboarding = false
+    
     var body: some Scene {
         WindowGroup {
-            MainTabView()
+            if didCompleteOnboarding {
+                MainTabView()
+            } else {
+                OnboardingView()
+            }
         }
     }
 }

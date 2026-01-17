@@ -23,6 +23,7 @@ class RSSFeedViewModel: ObservableObject {
     private let defaults = UserDefaults.standard
     private let searchEngine = SearchEngine()
     private let intelligenceEngine = ArticleIntelligenceEngine()
+    private let locationEngine = LocationEngine()
     let activityTracker = ActivityTracker()
     let signalEngine = SignalEngine()
     
@@ -79,27 +80,72 @@ class RSSFeedViewModel: ObservableObject {
     // MARK: - Default Feed Sources
     static func defaultFeedSources() -> [FeedSource] {
         [
+            // MARK: News Category
             FeedSource(name: "BBC News", url: "https://feeds.bbci.co.uk/news/world/rss.xml", category: .news),
             FeedSource(name: "CNN", url: "https://rss.cnn.com/rss/edition.rss", category: .news),
             FeedSource(name: "Reuters", url: "https://feeds.reuters.com/reuters/topNews", category: .news),
             FeedSource(name: "The Guardian", url: "https://www.theguardian.com/world/rss", category: .news),
+            FeedSource(name: "Al Jazeera", url: "https://www.aljazeera.com/xml/rss/all.xml", category: .news),
+            FeedSource(name: "NPR News", url: "https://feeds.npr.org/1001/rss.xml", category: .news),
+            FeedSource(name: "Associated Press", url: "https://feeds.apnews.com/rss/apf-topnews", category: .news),
             
+            // MARK: Regional News - USA
+            FeedSource(name: "New York Times", url: "https://rss.nytimes.com/services/xml/rss/nyt/HomePage.xml", category: .news),
+            FeedSource(name: "LA Times", url: "https://www.latimes.com/rss2.0.xml", category: .news),
+            FeedSource(name: "Chicago Tribune", url: "https://www.chicagotribune.com/arcio/rss/", category: .news),
+            FeedSource(name: "Washington Post", url: "https://feeds.washingtonpost.com/rss/national", category: .news),
+            FeedSource(name: "Miami Herald", url: "https://www.miamiherald.com/news/?widgetName=rssfeed&widgetContentId=712015&getXmlFeed=true", category: .news),
+            FeedSource(name: "San Francisco Chronicle", url: "https://www.sfchronicle.com/rss/feed/San-Francisco-News-163.php", category: .news),
+            
+            // MARK: Regional News - UK
+            FeedSource(name: "BBC UK", url: "https://feeds.bbci.co.uk/news/uk/rss.xml", category: .news),
+            FeedSource(name: "BBC Scotland", url: "https://feeds.bbci.co.uk/news/scotland/rss.xml", category: .news),
+            FeedSource(name: "The Guardian UK", url: "https://www.theguardian.com/uk-news/rss", category: .news),
+            
+            // MARK: Regional News - Europe
+            FeedSource(name: "Deutsche Welle", url: "https://rss.dw.com/rdf/rss-en-all", category: .news),
+            FeedSource(name: "France 24", url: "https://www.france24.com/en/rss", category: .news),
+            FeedSource(name: "The Local (Europe)", url: "https://feeds.thelocal.com/rss/news", category: .news),
+            
+            // MARK: Regional News - Asia
+            FeedSource(name: "South China Morning Post", url: "https://www.scmp.com/rss/91/feed", category: .news),
+            FeedSource(name: "The Japan Times", url: "https://www.japantimes.co.jp/feed/", category: .news),
+            FeedSource(name: "The Straits Times", url: "https://www.straitstimes.com/news/singapore/rss.xml", category: .news),
+            FeedSource(name: "The Times of India", url: "https://timesofindia.indiatimes.com/rssfeedstopstories.cms", category: .news),
+            
+            // MARK: Regional News - Middle East
+            FeedSource(name: "Jerusalem Post", url: "https://www.jpost.com/rss/rssfeedsheadlines.aspx", category: .news),
+            FeedSource(name: "Haaretz", url: "https://www.haaretz.com/cmlink/1.628295", category: .news),
+            
+            // MARK: Regional News - Australia
+            FeedSource(name: "ABC News (Australia)", url: "https://www.abc.net.au/news/feed/51120/rss.xml", category: .news),
+            FeedSource(name: "Sydney Morning Herald", url: "https://www.smh.com.au/rss/feed.xml", category: .news),
+            
+            // MARK: Regional News - Africa
+            FeedSource(name: "News24 (South Africa)", url: "https://feeds.24.com/articles/news24/TopStories/rss", category: .news),
+            
+            // MARK: Technology
             FeedSource(name: "The Verge", url: "https://www.theverge.com/rss/index.xml", category: .technology),
             FeedSource(name: "Wired", url: "https://www.wired.com/feed/rss", category: .technology),
             FeedSource(name: "TechCrunch", url: "https://techcrunch.com/feed/", category: .technology),
             FeedSource(name: "Ars Technica", url: "https://feeds.arstechnica.com/arstechnica/index", category: .technology),
             FeedSource(name: "MIT Technology Review", url: "https://www.technologyreview.com/feed/", category: .technology),
             
+            // MARK: Sports
             FeedSource(name: "ESPN", url: "https://www.espn.com/espn/rss/news", category: .sports, sportsSubcategory: .football),
             FeedSource(name: "BBC Sport", url: "https://feeds.bbci.co.uk/sport/rss.xml", category: .sports),
             FeedSource(name: "CBS Sports", url: "https://www.cbssports.com/rss/headlines/", category: .sports),
             FeedSource(name: "Yahoo Sports", url: "https://sports.yahoo.com/rss/", category: .sports),
+            FeedSource(name: "Sky Sports", url: "https://www.skysports.com/rss/12040", category: .sports),
+            FeedSource(name: "The Athletic", url: "https://theathletic.com/rss/", category: .sports),
             
+            // MARK: Entertainment
             FeedSource(name: "Variety", url: "https://variety.com/feed/", category: .entertainment),
             FeedSource(name: "The Hollywood Reporter", url: "https://www.hollywoodreporter.com/feed/", category: .entertainment),
             FeedSource(name: "Deadline", url: "https://deadline.com/feed/", category: .entertainment),
             FeedSource(name: "Entertainment Weekly", url: "https://ew.com/feed/", category: .entertainment),
             
+            // MARK: Health
             FeedSource(name: "Medical News Today", url: "https://www.medicalnewstoday.com/rss", category: .health),
             FeedSource(name: "STAT News", url: "https://www.statnews.com/feed/", category: .health),
             FeedSource(name: "NIH Health News", url: "https://www.nlm.nih.gov/news/rss.xml", category: .health),
@@ -108,10 +154,13 @@ class RSSFeedViewModel: ObservableObject {
             FeedSource(name: "ScienceDaily Health", url: "https://www.sciencedaily.com/rss/health.xml", category: .health),
             FeedSource(name: "Nature Medical Research", url: "https://www.nature.com/subjects/medical-research.rss", category: .health),
             
+            // MARK: Finance
             FeedSource(name: "MarketWatch", url: "https://www.marketwatch.com/rss/", category: .finance),
             FeedSource(name: "Bloomberg", url: "https://feeds.bloomberg.com/markets/news.rss", category: .finance),
+            FeedSource(name: "Financial Times", url: "https://www.ft.com/rss/home", category: .finance),
+            FeedSource(name: "The Economist", url: "https://www.economist.com/finance-and-economics/rss.xml", category: .finance),
             
-            // Investing Category with Subcategories
+            // MARK: Investing Category with Subcategories
             // Stocks
             FeedSource(name: "Yahoo Finance - Stocks", url: "https://finance.yahoo.com/news/rssindex", category: .investing, subcategory: .stocks),
             FeedSource(name: "Seeking Alpha - Stocks", url: "https://seekingalpha.com/feed.xml", category: .investing, subcategory: .stocks),
@@ -464,8 +513,14 @@ class RSSFeedViewModel: ObservableObject {
     
     // MARK: - Article Intelligence
     
-    /// Enrich articles with "Why This Matters" context
+    /// Enrich articles with "Why This Matters" context AND spatial intelligence
     private func enrichArticlesWithContext(category: FeedCategory?, subcategory: InvestingSubcategory?) {
+        // Step 1: Enrich with location data (async batch)
+        Task {
+            await enrichArticlesWithLocation()
+        }
+        
+        // Step 2: Enrich with context (sync)
         newsFeeds = newsFeeds.map { article in
             var enrichedArticle = article
             
@@ -493,6 +548,28 @@ class RSSFeedViewModel: ObservableObject {
             enrichedArticle.context = context
             return enrichedArticle
         }
+    }
+    
+    /// Enrich articles with location data (runs async, updates in place)
+    private func enrichArticlesWithLocation() async {
+        // Capture the current feeds to avoid mutation during iteration
+        let currentFeeds = newsFeeds
+        var enrichedFeeds = currentFeeds
+        
+        // Process articles in batches to avoid rate limiting
+        for (index, article) in currentFeeds.enumerated() {
+            if let location = await locationEngine.detectLocation(from: article) {
+                enrichedFeeds[index].location = location
+            }
+            
+            // Small delay to avoid geocoder rate limits (max 50 req/min)
+            if index % 10 == 0 && index > 0 {
+                try? await Task.sleep(nanoseconds: 500_000_000) // 0.5 seconds
+            }
+        }
+        
+        // Update newsFeeds once at the end, on the main actor
+        newsFeeds = enrichedFeeds
     }
     
     // MARK: - Puzzle Progress

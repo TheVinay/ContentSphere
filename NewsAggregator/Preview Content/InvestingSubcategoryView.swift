@@ -112,50 +112,6 @@ struct SubcategoryCard: View {
     }
 }
 
-// MARK: - Investing Category Chip (Enhanced)
-struct InvestingCategoryChip: View {
-    let isSelected: Bool
-    let hasSubcategorySelected: Bool
-    let subcategoryName: String?
-    let action: () -> Void
-    let onSubcategoryTap: () -> Void
-    
-    var body: some View {
-        HStack(spacing: 4) {
-            Button(action: action) {
-                HStack(spacing: 6) {
-                    Image(systemName: "chart.bar.fill")
-                        .font(.system(size: 14))
-                    Text("Investing")
-                        .font(.subheadline)
-                        .fontWeight(isSelected ? .semibold : .regular)
-                }
-            }
-            
-            if isSelected && hasSubcategorySelected {
-                Button(action: onSubcategoryTap) {
-                    HStack(spacing: 4) {
-                        Text("›")
-                            .font(.caption)
-                        Text(subcategoryName ?? "All")
-                            .font(.caption)
-                            .fontWeight(.semibold)
-                    }
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 4)
-                    .background(Color.white.opacity(0.3))
-                    .cornerRadius(12)
-                }
-            }
-        }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 8)
-        .background(isSelected ? Color.teal : Color(.systemGray6))
-        .foregroundStyle(isSelected ? .white : .primary)
-        .cornerRadius(20)
-    }
-}
-
 // MARK: - Investing Feed Badge
 struct InvestingBadge: View {
     let subcategory: InvestingSubcategory?

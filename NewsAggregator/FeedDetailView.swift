@@ -104,6 +104,22 @@ struct FeedDetailView: View {
                             
                             Spacer()
                             
+                            // Location badge
+                            if let location = feed.location {
+                                HStack(spacing: 4) {
+                                    Image(systemName: "mappin.circle.fill")
+                                        .font(.caption)
+                                    Text(location.detectedLocation)
+                                        .font(.caption)
+                                        .fontWeight(.medium)
+                                }
+                                .foregroundStyle(.white)
+                                .padding(.horizontal, 8)
+                                .padding(.vertical, 4)
+                                .background(Color.blue)
+                                .cornerRadius(6)
+                            }
+                            
                             Text(feed.formattedDate)
                                 .font(.caption)
                                 .foregroundStyle(.secondary)

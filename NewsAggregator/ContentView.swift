@@ -14,7 +14,7 @@ struct ContentView: View {
                 // Search Bar
                 SearchBarView(searchText: $viewModel.searchQuery)
                     .padding(.horizontal)
-                    .padding(.top, 8)
+                    .padding(.top, 6)
                 
                 // Category Tabs
                 CategoryTabsView(
@@ -100,23 +100,38 @@ struct ContentView: View {
                 
                 // Bottom Toolbar
                 BottomToolbarView(
-                    isGridView: $isGridView,
-                    onBookmarksTapped: { showBookmarks = true },
-                    onRefreshTapped: {
-                        Task {
-                            await viewModel.refreshFeeds()
-                        }
-                    }
+                    onBookmarksTapped: { showBookmarks = true }
                 )
             }
             .navigationTitle("News Aggregator")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    Button {
-                        showSettings = true
+                    Menu {
+                        Button {
+                            Task {
+                                await viewModel.refreshFeeds()
+                            }
+                        } label: {
+                            Label("Refresh", systemImage: "arrow.clockwise")
+                        }
+                        
+                        Button {
+                            isGridView.toggle()
+                        } label: {
+                            Label(isGridView ? "Switch to List" : "Switch to Grid", 
+                                  systemImage: isGridView ? "list.bullet" : "square.grid.2x2")
+                        }
+                        
+                        Divider()
+                        
+                        Button {
+                            showSettings = true
+                        } label: {
+                            Label("Settings", systemImage: "gearshape")
+                        }
                     } label: {
-                        Image(systemName: "gearshape.fill")
+                        Image(systemName: "ellipsis.circle")
                             .foregroundStyle(.blue)
                     }
                 }
@@ -224,8 +239,8 @@ struct FeedListCard: View {
     
     var body: some View {
         Button(action: onTap) {
-            HStack(alignment: .top, spacing: 12) {
-                // Thumbnail
+            HStack(alignment: .top, spacing: 14) {
+                // Thumbnail - larger with better aspect ratio
                 if let thumbnailURL = feed.thumbnail, let url = URL(string: thumbnailURL) {
                     AsyncImage(url: url) { phase in
                         switch phase {
@@ -241,39 +256,41 @@ struct FeedListCard: View {
                             placeholderImage
                         }
                     }
-                    .frame(width: 100, height: 100)
-                    .clipShape(RoundedRectangle(cornerRadius: 8))
+                    .frame(width: 120, height: 90)
+                    .clipShape(RoundedRectangle(cornerRadius: 10))
                 } else {
                     placeholderImage
-                        .frame(width: 100, height: 100)
-                        .clipShape(RoundedRectangle(cornerRadius: 8))
+                        .frame(width: 120, height: 90)
+                        .clipShape(RoundedRectangle(cornerRadius: 10))
                 }
                 
                 // Content
-                VStack(alignment: .leading, spacing: 6) {
+                VStack(alignment: .leading, spacing: 8) {
                     // Source badge
                     if let sourceName = feed.sourceName {
                         Text(sourceName)
                             .font(.caption2)
-                            .fontWeight(.semibold)
+                            .fontWeight(.bold)
                             .foregroundStyle(.white)
-                            .padding(.horizontal, 8)
-                            .padding(.vertical, 4)
-                            .background(Color.blue)
-                            .cornerRadius(4)
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 5)
+                            .background(
+                                LinearGradient(colors: [.blue, .blue.opacity(0.8)], startPoint: .leading, endPoint: .trailing)
+                            )
+                            .cornerRadius(6)
                     }
                     
                     Text(feed.title)
-                        .font(.subheadline)
-                        .fontWeight(.semibold)
+                        .font(.body)
+                        .fontWeight(.bold)
                         .lineLimit(3)
                         .foregroundStyle(.primary)
                     
                     // "Why This Matters" context
                     if let context = feed.context {
-                        HStack(alignment: .top, spacing: 4) {
+                        HStack(alignment: .top, spacing: 5) {
                             Image(systemName: "lightbulb.fill")
-                                .font(.caption2)
+                                .font(.caption)
                                 .foregroundStyle(contextColor(for: context.displayColor))
                             
                             Text(context.reason)
@@ -282,13 +299,34 @@ struct FeedListCard: View {
                                 .foregroundStyle(contextColor(for: context.displayColor))
                                 .lineLimit(2)
                         }
-                        .padding(.top, 2)
+                        .padding(.vertical, 4)
+                        .padding(.horizontal, 8)
+                        .background(contextColor(for: context.displayColor).opacity(0.08))
+                        .cornerRadius(6)
                     }
                     
-                    HStack {
+                    Spacer(minLength: 0)
+                    
+                    HStack(spacing: 8) {
                         Text(feed.formattedDate)
                             .font(.caption)
                             .foregroundStyle(.secondary)
+                        
+                        // Location badge
+                        if let location = feed.location {
+                            HStack(spacing: 3) {
+                                Image(systemName: "mappin.circle.fill")
+                                    .font(.caption2)
+                                Text(location.detectedLocation)
+                                    .font(.caption2)
+                                    .lineLimit(1)
+                            }
+                            .foregroundStyle(.blue)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 3)
+                            .background(Color.blue.opacity(0.1))
+                            .cornerRadius(5)
+                        }
                         
                         Spacer()
                         
@@ -302,10 +340,10 @@ struct FeedListCard: View {
                 
                 Spacer(minLength: 0)
             }
-            .padding(12)
+            .padding(14)
             .background(Color(.systemBackground))
-            .cornerRadius(12)
-            .shadow(color: .black.opacity(0.05), radius: 5, x: 0, y: 2)
+            .cornerRadius(14)
+            .shadow(color: .black.opacity(0.08), radius: 8, x: 0, y: 3)
         }
         .buttonStyle(.plain)
     }
@@ -341,80 +379,104 @@ struct FeedGridCard: View {
     
     var body: some View {
         Button(action: onTap) {
-            VStack(alignment: .leading, spacing: 8) {
+            VStack(alignment: .leading, spacing: 0) {
                 // Thumbnail
-                if let thumbnailURL = feed.thumbnail, let url = URL(string: thumbnailURL) {
-                    AsyncImage(url: url) { phase in
-                        switch phase {
-                        case .success(let image):
-                            image
-                                .resizable()
-                                .aspectRatio(contentMode: .fill)
-                        case .failure(_):
-                            placeholderImage
-                        case .empty:
-                            ProgressView()
-                        @unknown default:
-                            placeholderImage
+                ZStack(alignment: .topTrailing) {
+                    if let thumbnailURL = feed.thumbnail, let url = URL(string: thumbnailURL) {
+                        AsyncImage(url: url) { phase in
+                            switch phase {
+                            case .success(let image):
+                                image
+                                    .resizable()
+                                    .aspectRatio(contentMode: .fill)
+                            case .failure(_):
+                                placeholderImage
+                            case .empty:
+                                ProgressView()
+                            @unknown default:
+                                placeholderImage
+                            }
                         }
+                        .frame(height: 140)
+                        .clipped()
+                    } else {
+                        placeholderImage
+                            .frame(height: 140)
                     }
-                    .frame(height: 120)
-                    .clipped()
-                } else {
-                    placeholderImage
-                        .frame(height: 120)
+                    
+                    // Bookmark badge on image
+                    if isBookmarked {
+                        Image(systemName: "bookmark.fill")
+                            .font(.caption)
+                            .foregroundStyle(.white)
+                            .padding(6)
+                            .background(.orange, in: Circle())
+                            .padding(8)
+                    }
                 }
                 
-                VStack(alignment: .leading, spacing: 4) {
+                VStack(alignment: .leading, spacing: 6) {
                     if let sourceName = feed.sourceName {
                         Text(sourceName)
                             .font(.caption2)
-                            .fontWeight(.semibold)
-                            .foregroundStyle(.blue)
+                            .fontWeight(.bold)
+                            .foregroundStyle(.white)
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 4)
+                            .background(
+                                LinearGradient(colors: [.blue, .blue.opacity(0.8)], startPoint: .leading, endPoint: .trailing)
+                            )
+                            .cornerRadius(5)
                     }
                     
                     Text(feed.title)
-                        .font(.caption)
-                        .fontWeight(.semibold)
+                        .font(.subheadline)
+                        .fontWeight(.bold)
                         .lineLimit(3)
                         .foregroundStyle(.primary)
                     
-                    // "Why This Matters" context (compact for grid)
+                    // "Why This Matters" context (compact)
                     if let context = feed.context {
-                        HStack(alignment: .top, spacing: 3) {
+                        HStack(alignment: .top, spacing: 4) {
                             Image(systemName: "lightbulb.fill")
-                                .font(.system(size: 8))
+                                .font(.caption2)
                                 .foregroundStyle(contextColor(for: context.displayColor))
                             
                             Text(context.reason)
-                                .font(.system(size: 9))
+                                .font(.caption2)
                                 .italic()
                                 .foregroundStyle(contextColor(for: context.displayColor))
-                                .lineLimit(1)
+                                .lineLimit(2)
                         }
-                        .padding(.top, 1)
+                        .padding(.vertical, 4)
+                        .padding(.horizontal, 6)
+                        .background(contextColor(for: context.displayColor).opacity(0.08))
+                        .cornerRadius(5)
                     }
                     
-                    HStack {
+                    Spacer(minLength: 0)
+                    
+                    HStack(spacing: 6) {
                         Text(feed.formattedDate)
                             .font(.caption2)
                             .foregroundStyle(.secondary)
                         
-                        Spacer()
-                        
-                        if isBookmarked {
-                            Image(systemName: "bookmark.fill")
+                        // Location badge (compact)
+                        if feed.location != nil {
+                            Image(systemName: "mappin.circle.fill")
                                 .font(.caption2)
-                                .foregroundStyle(.orange)
+                                .foregroundStyle(.blue)
                         }
+                        
+                        Spacer()
                     }
                 }
-                .padding(.horizontal, 8)
-                .padding(.bottom, 8)
+                .padding(.horizontal, 10)
+                .padding(.vertical, 10)
             }
             .background(Color(.systemBackground))
-            .cornerRadius(12)
-            .shadow(color: .black.opacity(0.05), radius: 5, x: 0, y: 2)
+            .cornerRadius(14)
+            .shadow(color: .black.opacity(0.08), radius: 8, x: 0, y: 3)
         }
         .buttonStyle(.plain)
     }
@@ -433,23 +495,23 @@ struct FeedGridCard: View {
     
     private var placeholderImage: some View {
         Rectangle()
-            .fill(Color(.systemGray5))
+            .fill(LinearGradient(colors: [.gray.opacity(0.2), .gray.opacity(0.1)], startPoint: .topLeading, endPoint: .bottomTrailing))
             .overlay {
                 Image(systemName: "newspaper")
                     .font(.title2)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(.secondary.opacity(0.5))
             }
     }
 }
 
 // MARK: - Bottom Toolbar
 struct BottomToolbarView: View {
-    @Binding var isGridView: Bool
     let onBookmarksTapped: () -> Void
-    let onRefreshTapped: () -> Void
     
     var body: some View {
-        HStack(spacing: 32) {
+        HStack {
+            Spacer()
+            
             ToolbarButton(
                 icon: "bookmark.fill",
                 label: "Saved",
@@ -457,19 +519,7 @@ struct BottomToolbarView: View {
                 action: onBookmarksTapped
             )
             
-            ToolbarButton(
-                icon: "arrow.clockwise",
-                label: "Refresh",
-                color: .blue,
-                action: onRefreshTapped
-            )
-            
-            ToolbarButton(
-                icon: isGridView ? "square.grid.2x2" : "list.bullet",
-                label: isGridView ? "Grid" : "List",
-                color: .purple,
-                action: { isGridView.toggle() }
-            )
+            Spacer()
         }
         .padding()
         .background(

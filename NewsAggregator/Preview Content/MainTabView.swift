@@ -28,23 +28,59 @@ struct MainTabView: View {
                 }
                 .tag(2)
             
+            // Map Tab (NEW)
+            NavigationView {
+                NewsMapView(viewModel: viewModel)
+            }
+            .tabItem {
+                Label("Map", systemImage: "map.fill")
+            }
+            .tag(3)
+            
             // Puzzles Tab
             PuzzlesView(viewModel: viewModel)
                 .tabItem {
                     Label("Puzzles", systemImage: "puzzlepiece.fill")
                 }
-                .tag(3)
+                .tag(4)
             
             // Saved Tab
             SavedView(viewModel: viewModel)
                 .tabItem {
                     Label("Saved", systemImage: "bookmark.fill")
                 }
-                .tag(4)
+                .tag(5)
         }
         .accentColor(.blue)
+        .onAppear {
+            // Configure tab bar appearance
+            let appearance = UITabBarAppearance()
+            appearance.configureWithDefaultBackground()
+            appearance.backgroundColor = UIColor.systemBackground.withAlphaComponent(0.92)
+            
+            // Apply blur effect
+            let blurEffect = UIBlurEffect(style: .systemMaterial)
+            let blurView = UIVisualEffectView(effect: blurEffect)
+            blurView.frame = CGRect(x: 0, y: 0, width: UIScreen.main.bounds.width, height: 100)
+            
+            // Increase icon size
+            _ = UIImage.SymbolConfiguration(pointSize: 22, weight: .medium)
+            appearance.stackedLayoutAppearance.normal.iconColor = .secondaryLabel
+            appearance.stackedLayoutAppearance.selected.iconColor = .systemBlue
+            
+            // Ensure labels always visible
+            appearance.stackedLayoutAppearance.normal.titleTextAttributes = [
+                .font: UIFont.systemFont(ofSize: 11, weight: .medium)
+            ]
+            appearance.stackedLayoutAppearance.selected.titleTextAttributes = [
+                .font: UIFont.systemFont(ofSize: 11, weight: .semibold)
+            ]
+            
+            UITabBar.appearance().standardAppearance = appearance
+            UITabBar.appearance().scrollEdgeAppearance = appearance
+        }
         .onChange(of: selectedTab) { _, newValue in
-            let tabNames = ["Home", "Discover", "Headlines", "Puzzles", "Saved"]
+            let tabNames = ["Home", "Discover", "Headlines", "Map", "Puzzles", "Saved"]
             if newValue < tabNames.count {
                 viewModel.activityTracker.trackTabVisit(tabNames[newValue])
             }
@@ -64,6 +100,17 @@ struct HomeView: View {
     var body: some View {
         NavigationView {
             VStack(spacing: 0) {
+                // Subtle subheader
+                HStack {
+                    Text("What's moving the world right now")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    Spacer()
+                }
+                .padding(.horizontal)
+                .padding(.top, 6)
+                .padding(.bottom, 4)
+                
                 // Search Bar
                 SearchBarView(searchText: $viewModel.searchQuery)
                     .padding(.horizontal)
@@ -93,7 +140,7 @@ struct HomeView: View {
                     },
                     enabledCategories: viewModel.enabledCategories()
                 )
-                .padding(.vertical, 8)
+                .padding(.vertical, 6)
                 
                 // Subcategory badge for Investing
                 if viewModel.selectedCategory == .investing, let subcategory = viewModel.selectedSubcategory {
@@ -152,36 +199,38 @@ struct HomeView: View {
                     }
                 }
             }
-            .navigationTitle("News")
+            .navigationTitle("WorldPulse")
             .navigationBarTitleDisplayMode(.large)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    HStack(spacing: 16) {
-                        // Refresh button
+                    Menu {
                         Button {
                             Task {
                                 await viewModel.refreshFeeds()
                             }
                         } label: {
-                            Image(systemName: "arrow.clockwise")
-                                .foregroundStyle(.blue)
+                            Label("Refresh", systemImage: "arrow.clockwise")
                         }
                         
-                        // View mode toggle
                         Button {
                             isGridView.toggle()
                         } label: {
-                            Image(systemName: isGridView ? "list.bullet" : "square.grid.2x2")
-                                .foregroundStyle(.blue)
+                            Label(
+                                isGridView ? "List View" : "Grid View",
+                                systemImage: isGridView ? "list.bullet" : "square.grid.2x2"
+                            )
                         }
                         
-                        // Settings button (de-emphasized)
+                        Divider()
+                        
                         Button {
                             showSettings = true
                         } label: {
-                            Image(systemName: "gearshape.fill")
-                                .foregroundStyle(.secondary)
+                            Label("Settings", systemImage: "gearshape")
                         }
+                    } label: {
+                        Image(systemName: "ellipsis.circle")
+                            .foregroundStyle(.blue)
                     }
                 }
             }
@@ -221,45 +270,55 @@ struct SectionedFeedListView: View {
     let isBookmarked: (NewsFeed) -> Bool
     let onFeedTapped: (NewsFeed) -> Void
     
-    var groupedFeeds: [(header: String, feeds: [NewsFeed])] {
+    var groupedFeeds: [(header: String, feeds: [NewsFeed], isTopStories: Bool)] {
         let now = Date()
         let calendar = Calendar.current
         
-        var sections: [(String, [NewsFeed])] = []
+        var sections: [(String, [NewsFeed], Bool)] = []
         
-        // Top Stories (last 6 hours)
-        let sixHoursAgo = calendar.date(byAdding: .hour, value: -6, to: now)!
-        let topStories = feeds.filter { feed in
-            guard let date = feed.postDate else { return false }
-            return date > sixHoursAgo
+        // Top Stories - expand time range if needed to always have content
+        var topStories: [NewsFeed] = []
+        var hoursBack = 6
+        
+        while topStories.isEmpty && hoursBack <= 24 {
+            let timeAgo = calendar.date(byAdding: .hour, value: -hoursBack, to: now)!
+            topStories = feeds.filter { feed in
+                guard let date = feed.postDate else { return false }
+                return date > timeAgo
+            }
+            if topStories.isEmpty {
+                hoursBack += 6
+            }
         }
+        
         if !topStories.isEmpty {
-            sections.append(("Top Stories", Array(topStories.prefix(10))))
+            sections.append(("Top Stories", Array(topStories.prefix(10)), true))
         }
         
-        // Earlier Today (today but older than 6 hours)
+        // Earlier Today
         let startOfDay = calendar.startOfDay(for: now)
+        let sixHoursAgo = calendar.date(byAdding: .hour, value: -6, to: now)!
         let earlierToday = feeds.filter { feed in
             guard let date = feed.postDate else { return false }
             return date >= startOfDay && date <= sixHoursAgo
         }
         if !earlierToday.isEmpty {
-            sections.append(("Earlier Today", earlierToday))
+            sections.append(("Earlier Today", earlierToday, false))
         }
         
-        // This Week (last 7 days, excluding today)
+        // This Week
         let sevenDaysAgo = calendar.date(byAdding: .day, value: -7, to: now)!
         let thisWeek = feeds.filter { feed in
             guard let date = feed.postDate else { return false }
             return date >= sevenDaysAgo && date < startOfDay
         }
         if !thisWeek.isEmpty {
-            sections.append(("This Week", thisWeek))
+            sections.append(("This Week", thisWeek, false))
         }
         
-        // If no sections created, show all
+        // Fallback
         if sections.isEmpty && !feeds.isEmpty {
-            sections.append(("All Articles", feeds))
+            sections.append(("All Articles", feeds, true))
         }
         
         return sections
@@ -267,33 +326,49 @@ struct SectionedFeedListView: View {
     
     var body: some View {
         ScrollView {
-            LazyVStack(alignment: .leading, spacing: 16, pinnedViews: [.sectionHeaders]) {
-                ForEach(groupedFeeds, id: \.header) { section in
+            LazyVStack(alignment: .leading, spacing: 12, pinnedViews: [.sectionHeaders]) {
+                ForEach(Array(groupedFeeds.enumerated()), id: \.element.header) { index, section in
                     Section {
                         if isGridView {
-                            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 16) {
-                                ForEach(section.feeds) { feed in
+                            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
+                                ForEach(Array(section.feeds.enumerated()), id: \.element.id) { feedIndex, feed in
                                     FeedGridCard(feed: feed, isBookmarked: isBookmarked(feed)) {
                                         onFeedTapped(feed)
                                     }
+                                    .transition(.opacity.combined(with: .scale(scale: 0.95)))
+                                    .animation(.easeOut(duration: 0.3).delay(Double(feedIndex) * 0.03), value: feed.id)
                                 }
                             }
                         } else {
-                            LazyVStack(spacing: 12) {
-                                ForEach(section.feeds) { feed in
-                                    FeedListCard(feed: feed, isBookmarked: isBookmarked(feed)) {
-                                        onFeedTapped(feed)
+                            // Hero card for first article in Top Stories
+                            if section.isTopStories, let heroFeed = section.feeds.first {
+                                HeroFeedCard(feed: heroFeed, isBookmarked: isBookmarked(heroFeed)) {
+                                    onFeedTapped(heroFeed)
+                                }
+                                .transition(.opacity.combined(with: .scale(scale: 0.95)))
+                                .animation(.easeOut(duration: 0.4), value: heroFeed.id)
+                            }
+                            
+                            // Regular cards
+                            LazyVStack(spacing: 10) {
+                                ForEach(Array(section.feeds.enumerated()), id: \.element.id) { feedIndex, feed in
+                                    // Skip first if it's the hero
+                                    if !(section.isTopStories && feedIndex == 0) {
+                                        FeedListCard(feed: feed, isBookmarked: isBookmarked(feed)) {
+                                            onFeedTapped(feed)
+                                        }
+                                        .transition(.opacity.combined(with: .scale(scale: 0.95)))
+                                        .animation(.easeOut(duration: 0.3).delay(Double(feedIndex) * 0.03), value: feed.id)
                                     }
                                 }
                             }
                         }
                     } header: {
-                        SectionHeader(title: section.header, count: section.feeds.count)
+                        ImprovedSectionHeader(title: section.header, count: section.feeds.count)
                     }
                 }
             }
             .padding()
-
         }
         .refreshable {
             // Trigger refresh
@@ -301,17 +376,155 @@ struct SectionedFeedListView: View {
     }
 }
 
-// MARK: - Section Header
-struct SectionHeader: View {
+// MARK: - Hero Feed Card
+struct HeroFeedCard: View {
+    let feed: NewsFeed
+    let isBookmarked: Bool
+    let onTap: () -> Void
+    
+    var body: some View {
+        Button(action: onTap) {
+            ZStack(alignment: .bottomLeading) {
+                // Background Image
+                if let thumbnailURL = feed.thumbnail, let url = URL(string: thumbnailURL) {
+                    AsyncImage(url: url) { phase in
+                        switch phase {
+                        case .success(let image):
+                            image
+                                .resizable()
+                                .aspectRatio(contentMode: .fill)
+                        case .failure(_):
+                            placeholderImage
+                        case .empty:
+                            ProgressView()
+                        @unknown default:
+                            placeholderImage
+                        }
+                    }
+                    .frame(height: 280)
+                    .clipped()
+                } else {
+                    placeholderImage
+                        .frame(height: 280)
+                }
+                
+                // Gradient Overlay
+                LinearGradient(
+                    colors: [.clear, .black.opacity(0.3), .black.opacity(0.8)],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+                
+                // Content
+                VStack(alignment: .leading, spacing: 8) {
+                    // Source badge
+                    if let sourceName = feed.sourceName {
+                        Text(sourceName)
+                            .font(.caption)
+                            .fontWeight(.semibold)
+                            .foregroundStyle(.white)
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 5)
+                            .background(.ultraThinMaterial)
+                            .cornerRadius(6)
+                    }
+                    
+                    // Title
+                    Text(feed.title)
+                        .font(.title2)
+                        .fontWeight(.bold)
+                        .foregroundStyle(.white)
+                        .lineLimit(3)
+                        .shadow(color: .black.opacity(0.3), radius: 2)
+                    
+                    // Context
+                    if let context = feed.context {
+                        HStack(spacing: 4) {
+                            Image(systemName: "lightbulb.fill")
+                                .font(.caption2)
+                            Text(context.reason)
+                                .font(.caption)
+                                .italic()
+                                .lineLimit(2)
+                        }
+                        .foregroundStyle(.white.opacity(0.9))
+                    }
+                    
+                    // Meta row
+                    HStack {
+                        Text(feed.formattedDate)
+                            .font(.caption)
+                            .foregroundStyle(.white.opacity(0.8))
+                        
+                        if isBookmarked {
+                            Image(systemName: "bookmark.fill")
+                                .font(.caption)
+                                .foregroundStyle(.orange)
+                        }
+                        
+                        Spacer()
+                        
+                        if feed.location != nil {
+                            HStack(spacing: 3) {
+                                Image(systemName: "mappin.circle.fill")
+                                    .font(.caption2)
+                            }
+                            .foregroundStyle(.white.opacity(0.8))
+                        }
+                    }
+                }
+                .padding(16)
+            }
+            .cornerRadius(16)
+            .shadow(color: .black.opacity(0.15), radius: 10, x: 0, y: 4)
+        }
+        .buttonStyle(.plain)
+    }
+    
+    private var placeholderImage: some View {
+        Rectangle()
+            .fill(LinearGradient(colors: [.blue.opacity(0.3), .purple.opacity(0.3)], startPoint: .topLeading, endPoint: .bottomTrailing))
+            .overlay {
+                Image(systemName: "newspaper")
+                    .font(.system(size: 50))
+                    .foregroundStyle(.white.opacity(0.5))
+            }
+    }
+}
+
+// MARK: - Improved Section Header
+struct ImprovedSectionHeader: View {
     let title: String
     let count: Int
     
+    private var icon: String {
+        switch title {
+        case "Top Stories": return "flame.fill"
+        case "Earlier Today": return "clock.fill"
+        case "This Week": return "calendar"
+        default: return "newspaper"
+        }
+    }
+    
+    private var iconColor: Color {
+        switch title {
+        case "Top Stories": return .orange
+        case "Earlier Today": return .blue
+        case "This Week": return .purple
+        default: return .blue
+        }
+    }
+    
     var body: some View {
-        HStack {
+        HStack(spacing: 8) {
+            Image(systemName: icon)
+                .font(.title3)
+                .foregroundStyle(iconColor)
+            
             Text(title)
                 .font(.title2)
                 .fontWeight(.bold)
-                .foregroundStyle(.blue)
+                .foregroundStyle(.primary)
             
             Text("\(count)")
                 .font(.subheadline)
@@ -320,54 +533,18 @@ struct SectionHeader: View {
             Spacer()
         }
         .padding(.vertical, 8)
-        .background(Color(.systemBackground).opacity(0.95))
-    }
-}
-
-// MARK: - Action Bar View
-struct ActionBarView: View {
-    @Binding var isGridView: Bool
-    let onRefreshTapped: () -> Void
-    
-    var body: some View {
-        HStack(spacing: 32) {
-            Button {
-                onRefreshTapped()
-            } label: {
-                VStack(spacing: 4) {
-                    Image(systemName: "arrow.clockwise")
-                        .font(.system(size: 20))
-                        .foregroundStyle(.blue)
-                    Text("Refresh")
-                        .font(.caption2)
-                        .foregroundStyle(.blue)
-                }
-            }
-            
-            Spacer()
-            
-            Button {
-                isGridView.toggle()
-            } label: {
-                VStack(spacing: 4) {
-                    Image(systemName: isGridView ? "square.grid.2x2.fill" : "list.bullet")
-                        .font(.system(size: 20))
-                        .foregroundStyle(.purple)
-                    Text(isGridView ? "Grid" : "List")
-                        .font(.caption2)
-                        .foregroundStyle(.purple)
-                }
-            }
-        }
-        .padding()
+        .padding(.horizontal, 4)
         .background(
-            Color(.systemBackground)
-                .shadow(color: .black.opacity(0.1), radius: 10, x: 0, y: -5)
+            .ultraThinMaterial,
+            in: RoundedRectangle(cornerRadius: 8)
         )
     }
 }
 
-// MARK: - Updated Category Tabs with Sports
+// MARK: - Preview
+#Preview {
+    MainTabView()
+}
 struct CategoryTabsView: View {
     @Binding var selectedCategory: FeedCategory
     @Binding var selectedSubcategory: InvestingSubcategory?
@@ -423,7 +600,11 @@ struct CategoryChip: View {
     let action: () -> Void
     
     var body: some View {
-        Button(action: action) {
+        Button(action: {
+            let generator = UIImpactFeedbackGenerator(style: .light)
+            generator.impactOccurred()
+            action()
+        }) {
             HStack(spacing: 6) {
                 Image(systemName: category.iconName)
                     .font(.system(size: 14))
@@ -434,14 +615,83 @@ struct CategoryChip: View {
             .padding(.horizontal, 16)
             .padding(.vertical, 8)
             .background(
-                isSelected ?
-                Color.blue :
-                Color(.systemGray6)
+                Group {
+                    if isSelected {
+                        LinearGradient(
+                            colors: [.blue, .blue.opacity(0.85)],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                        .shadow(color: .blue.opacity(0.3), radius: 4, x: 0, y: 2)
+                    } else {
+                        Color(.systemGray5)
+                    }
+                }
             )
-            .foregroundStyle(isSelected ? .white : .primary)
+            .foregroundStyle(isSelected ? .white : .secondary)
             .cornerRadius(20)
         }
         .buttonStyle(.plain)
+        .scaleEffect(isSelected ? 1.0 : 0.98)
+        .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isSelected)
+    }
+}
+
+// MARK: - Investing Category Chip
+struct InvestingCategoryChip: View {
+    let isSelected: Bool
+    let hasSubcategorySelected: Bool
+    let subcategoryName: String?
+    let action: () -> Void
+    let onSubcategoryTap: () -> Void
+    
+    var body: some View {
+        HStack(spacing: 4) {
+            Button(action: {
+                let generator = UIImpactFeedbackGenerator(style: .light)
+                generator.impactOccurred()
+                action()
+            }) {
+                HStack(spacing: 6) {
+                    Image(systemName: "chart.bar.fill")
+                        .font(.system(size: 14))
+                    Text("Investing")
+                        .font(.subheadline)
+                        .fontWeight(isSelected ? .semibold : .regular)
+                }
+            }
+            
+            if isSelected && hasSubcategorySelected {
+                Button(action: onSubcategoryTap) {
+                    Image(systemName: "chevron.down")
+                        .font(.caption)
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 4)
+                        .background(Color.white.opacity(0.25))
+                        .cornerRadius(8)
+                }
+            }
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 8)
+        .background(
+            Group {
+                if isSelected {
+                    LinearGradient(
+                        colors: [.teal, .teal.opacity(0.85)],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                    .shadow(color: .teal.opacity(0.3), radius: 4, x: 0, y: 2)
+                } else {
+                    Color(.systemGray5)
+                }
+            }
+        )
+        .foregroundStyle(isSelected ? .white : .secondary)
+        .cornerRadius(20)
+        .scaleEffect(isSelected ? 1.0 : 0.98)
+        .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isSelected)
     }
 }
 
@@ -453,7 +703,11 @@ struct SportsCategoryChip: View {
     
     var body: some View {
         HStack(spacing: 4) {
-            Button(action: action) {
+            Button(action: {
+                let generator = UIImpactFeedbackGenerator(style: .light)
+                generator.impactOccurred()
+                action()
+            }) {
                 HStack(spacing: 6) {
                     Image(systemName: "sportscourt")
                         .font(.system(size: 14))
@@ -469,16 +723,31 @@ struct SportsCategoryChip: View {
                         .font(.caption)
                         .padding(.horizontal, 6)
                         .padding(.vertical, 4)
-                        .background(Color.white.opacity(0.3))
+                        .background(Color.white.opacity(0.25))
                         .cornerRadius(8)
                 }
             }
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 8)
-        .background(isSelected ? Color.green : Color(.systemGray6))
-        .foregroundStyle(isSelected ? .white : .primary)
+        .background(
+            Group {
+                if isSelected {
+                    LinearGradient(
+                        colors: [.green, .green.opacity(0.85)],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                    .shadow(color: .green.opacity(0.3), radius: 4, x: 0, y: 2)
+                } else {
+                    Color(.systemGray5)
+                }
+            }
+        )
+        .foregroundStyle(isSelected ? .white : .secondary)
         .cornerRadius(20)
+        .scaleEffect(isSelected ? 1.0 : 0.98)
+        .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isSelected)
     }
 }
 
