@@ -1,10 +1,10 @@
-# 🌍 WorldPulse Branding Update
+# 🌍 Global Pulse Branding Update
 
 ## Implementation Summary (January 16, 2026)
 
 ### **What Changed:**
 
-Updated the **Home tab only** to use "WorldPulse" branding with a subtle tagline.
+Updated the **Home tab only** to use "Global Pulse" branding with a subtle tagline.
 
 ---
 
@@ -14,7 +14,7 @@ Updated the **Home tab only** to use "WorldPulse" branding with a subtle tagline
 
 #### **1. Navigation Title**
 - **Before:** `.navigationTitle("News")`
-- **After:** `.navigationTitle("WorldPulse")`
+- **After:** `.navigationTitle("Global Pulse")`
 - **Style:** `.large` (unchanged)
 - **Color:** System `.primary` (supports dark/light mode automatically)
 
@@ -67,7 +67,7 @@ HStack {
 
 ```
 ┌─────────────────────────────────────┐
-│  < Back          WorldPulse      ⋯  │  ← Large navigation title
+│  < Back       Global Pulse       ⋯  │  ← Large navigation title
 │                                     │
 │  What's moving the world right now  │  ← Subtle subheader (.secondary)
 │                                     │
@@ -88,7 +88,7 @@ HStack {
 - Generic app name
 
 ### **After:**
-- Navigation title: "WorldPulse"
+- Navigation title: "Global Pulse"
 - Tagline: "What's moving the world right now"
 - Clear brand identity
 - Conveys purpose immediately
@@ -110,7 +110,7 @@ HStack {
 - ✅ Search, categories, feeds unchanged
 
 ### **Accessibility:**
-- ✅ VoiceOver reads "WorldPulse" as title
+- ✅ VoiceOver reads "Global Pulse" as title
 - ✅ Dynamic Type supported (`.caption` scales)
 - ✅ High contrast mode supported (system colors)
 - ✅ Dark mode fully supported
@@ -119,7 +119,7 @@ HStack {
 
 ## Testing Checklist
 
-- [x] Navigation title displays "WorldPulse"
+- [x] Navigation title displays "Global Pulse"
 - [x] Large title style active
 - [x] Subheader visible below title
 - [x] Text color is subtle (secondary)
@@ -136,9 +136,9 @@ HStack {
 
 ## Brand Guidelines
 
-### **Name:** WorldPulse
-- Single word, no space
-- Capital W, capital P
+### **Name:** Global Pulse
+- Two words with space
+- Capital G, capital P
 - No special characters
 - No trademark symbols
 
@@ -167,7 +167,7 @@ HStack {
 If expanding branding in the future:
 
 1. **Consistent usage** across all tabs
-2. **App icon** with WorldPulse branding
+2. **App icon** with Global Pulse branding
 3. **Launch screen** with logo
 4. **About page** with mission statement
 5. **Share sheet** custom messaging
@@ -178,7 +178,7 @@ But for now: **Home tab only, minimal and clean.**
 
 ## Rationale
 
-### **Why "WorldPulse"?**
+### **Why "Global Pulse"?**
 - Conveys global news coverage
 - "Pulse" = real-time, current events
 - Memorable and distinctive
@@ -203,4 +203,4 @@ But for now: **Home tab only, minimal and clean.**
 
 **Implementation Complete! 🎉**
 
-The Home tab now displays "WorldPulse" branding with a subtle, professional tagline that supports the app's mission of delivering important global news in real-time.
+The Home tab now displays "Global Pulse" branding with a subtle, professional tagline that supports the app's mission of delivering important global news in real-time.
