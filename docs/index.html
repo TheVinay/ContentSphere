@@ -4,44 +4,169 @@
   <meta charset="UTF-8" />
   <title>ContentSphere Support</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+
   <style>
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, sans-serif;
-      max-width: 720px;
-      margin: 40px auto;
-      padding: 0 16px;
-      line-height: 1.6;
-      color: #111;
+    :root {
+      --bg: #0b0f14;
+      --card: #121826;
+      --text: #e6e8eb;
+      --muted: #9aa4b2;
+      --accent: #4da3ff;
+      --border: #1f2937;
     }
-    h1 { font-size: 28px; }
-    h2 { font-size: 18px; margin-top: 32px; }
-    footer { margin-top: 40px; font-size: 14px; color: #666; }
+
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif;
+      background: linear-gradient(180deg, #0b0f14, #0f1623);
+      color: var(--text);
+      line-height: 1.6;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 64px 20px 80px;
+    }
+
+    header {
+      margin-bottom: 48px;
+    }
+
+    h1 {
+      font-size: 40px;
+      font-weight: 700;
+      margin: 0 0 8px;
+      letter-spacing: -0.02em;
+    }
+
+    .tagline {
+      color: var(--muted);
+      font-size: 18px;
+    }
+
+    .card {
+      background: linear-gradient(180deg, #121826, #0f1522);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 28px;
+      margin-bottom: 24px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.35);
+    }
+
+    h2 {
+      font-size: 20px;
+      margin: 0 0 12px;
+    }
+
+    p {
+      margin: 8px 0;
+      color: var(--text);
+    }
+
+    ul {
+      padding-left: 18px;
+      margin: 12px 0 0;
+    }
+
+    li {
+      margin-bottom: 8px;
+      color: var(--muted);
+    }
+
+    a {
+      color: var(--accent);
+      text-decoration: none;
+      font-weight: 500;
+    }
+
+    a:hover {
+      text-decoration: underline;
+    }
+
+    footer {
+      margin-top: 48px;
+      color: var(--muted);
+      font-size: 14px;
+      text-align: center;
+    }
+
+    @media (max-width: 600px) {
+      h1 {
+        font-size: 32px;
+      }
+      .container {
+        padding-top: 48px;
+      }
+    }
   </style>
 </head>
 <body>
 
-<h1>ContentSphere Support</h1>
+  <div class="container">
 
-<p>
-ContentSphere is a privacy-first news aggregation app focused on clarity, context, and global awareness.
-</p>
+    <header>
+      <h1>ContentSphere</h1>
+      <div class="tagline">What’s moving the world right now</div>
+    </header>
 
-<h2>Support</h2>
-<p>
-For help or feedback, contact:
-<br />
-<a href="mailto:thevinay@gmail.com">thevinay@gmail.com</a>
-</p>
+    <div class="card">
+      <h2>About the App</h2>
+      <p>
+        ContentSphere is a modern, privacy-first news aggregation app designed to help you
+        understand global news with clarity and context.
+      </p>
+      <p>
+        It brings together trusted sources, intelligent organization, and spatial awareness
+        so you can see not just <em>what</em> is happening, but <em>why it matters</em>.
+      </p>
+    </div>
 
-<h2>Privacy</h2>
-<p>
-ContentSphere does not collect personal data, use analytics SDKs, or require accounts.
-All data is stored locally on your device.
-</p>
+    <div class="card">
+      <h2>Support</h2>
+      <p>
+        If you experience issues, have questions, or want to share feedback, you can reach out directly:
+      </p>
+      <p>
+        📧 <a href="mailto:thevinay@gmail.com">thevinay@gmail.com</a>
+      </p>
+      <ul>
+        <li>Feed not loading or updating</li>
+        <li>Questions about features or usage</li>
+        <li>Bug reports or suggestions</li>
+      </ul>
+    </div>
 
-<footer>
-© 2026 ContentSphere
-</footer>
+    <div class="card">
+      <h2>Privacy</h2>
+      <p>
+        ContentSphere is built with privacy as a core principle.
+      </p>
+      <ul>
+        <li>No accounts or sign-in required</li>
+        <li>No analytics or tracking SDKs</li>
+        <li>No personal data collection</li>
+        <li>All preferences and activity are stored locally on your device</li>
+      </ul>
+      <p>
+        ContentSphere does not sell, share, or transmit user data to third parties.
+      </p>
+    </div>
+
+    <div class="card">
+      <h2>App Information</h2>
+      <ul>
+        <li>Platform: iOS</li>
+        <li>Current version: 2.5.3</li>
+        <li>Support contact: vinay.viswam@gmail.com</li>
+      </ul>
+    </div>
+
+    <footer>
+      © 2026 ContentSphere · Built for clarity, not noise
+    </footer>
+
+  </div>
 
 </body>
 </html>
